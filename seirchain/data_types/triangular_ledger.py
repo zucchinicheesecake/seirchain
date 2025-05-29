@@ -1,16 +1,15 @@
+# seirchain/data_types/triangular_ledger.py
 import json
 import os
 import time
 import hashlib
+import uuid
 
-from seirchain.data_types.triad import Triad # Import the Triad class
-from seirchain.config import Config # Import Config to get difficulty
+from seirchain.data_types.triad import Triad
+from seirchain.data_types.transaction_node import TransactionNode
+from seirchain.config import Config
 
 class TriangularLedger:
-    """
-    Manages the blockchain (ledger) for the simulation.
-    Implemented as a Singleton to ensure a single source of truth.
-    """
     _instance = None
     _initialized = False
 
@@ -21,38 +20,69 @@ class TriangularLedger:
 
     def __init__(self):
         if not self._initialized:
-            self.chain = []
-            self.config = Config.instance() # Get the singleton config instance
+            self.triads = {}
+            self.config = Config.instance()
             self._initialized = True
 
     @classmethod
     def instance(cls):
-        """Returns the singleton instance of TriangularLedger."""
         if cls._instance is None:
-            cls() # This calls __init__
+            cls()
         return cls._instance
 
-    def add_triad(self, triad):
-        """Adds a new Triad to the ledger."""
-        if triad.hash.startswith('0' * self.config.DIFFICULTY):
-            self.chain.append(triad)
-            return True
-        return False
+    def add_triad(self, new_triad):
+        if not new_triad.hash.startswith('0' * self.config.DIFFICULTY):
+            print(f"Failed to add Triad {new_triad.triad_id[:8]}...: Hash does not meet difficulty.")
+            return False
 
-    def get_latest_triad(self):
-        """Returns the latest Triad in the ledger."""
-        return self.chain[-1] if self.chain else None
+        if new_triad.hash in self.triads:
+            print(f"Failed to add Triad {new_triad.triad_id[:8]}...: Triad with this hash already exists.")
+            return False
+
+        for parent_hash in new_triad.parent_hashes:
+            if parent_hash not in self.triads:
+                print(f"Failed to add Triad {new_triad.triad_id[:8]}...: Parent hash {parent_hash[:8]}... not found in ledger.")
+                return False
+            parent_triad = self.triads[parent_hash]
+            if parent_triad.is_full():
+                print(f"Failed to add Triad {new_triad.triad_id[:8]}...: Parent Triad {parent_hash[:8]}... is already full (3 children).")
+                return False
+            parent_triad.add_child_hash(new_triad.hash)
+
+        self.triads[new_triad.hash] = new_triad
+        print(f"Successfully added Triad {new_triad.triad_id[:8]}... (Depth: {new_triad.depth}) to ledger.")
+        return True
+
+    def get_triad(self, triad_hash):
+        return self.triads.get(triad_hash)
+
+    def get_candidate_parents(self):
+        candidates = []
+        for triad_hash, triad in self.triads.items():
+            if not triad.is_full() and triad.depth < self.config.MAX_DEPTH:
+                candidates.append(triad)
+        
+        candidates.sort(key=lambda x: (x.depth, len(x.child_hashes)))
+        return candidates
+
+    def get_max_current_depth(self):
+        if not self.triads:
+            return 0
+        return max(triad.depth for triad in self.triads.values())
 
     def load_ledger(self, network, max_depth):
-        """Loads the ledger from a JSON file, or initializes with Genesis Triad."""
         ledger_file = f"ledger_{network}.json"
         if os.path.exists(ledger_file):
             try:
                 with open(ledger_file, 'r') as f:
                     data = json.load(f)
-                    # Reconstruct Triad objects from dictionary data
-                    self.chain = [Triad.from_dict(t_data) for t_data in data.get('chain', [])]
-                print(f"Ledger loaded with {len(self.chain)} Triads and max depth {max_depth}.")
+                    self.triads = {
+                        triad_hash: Triad.from_dict(t_data)
+                        for triad_hash, t_data in data.get('triads', {}).items()
+                    }
+                print(f"Fractal ledger loaded: {len(self.triads)} Triads across {self.get_max_current_depth()} depths.")
+                if not self.triads:
+                    self._initialize_genesis_triad()
             except Exception as e:
                 print(f"Error loading ledger: {e}. Initializing with Genesis Triad.")
                 self._initialize_genesis_triad()
@@ -61,36 +91,52 @@ class TriangularLedger:
             self._initialize_genesis_triad()
 
     def _initialize_genesis_triad(self):
-        """Initializes the ledger with a Genesis Triad."""
-        # Calculate a consistent hash for the genesis triad
-        genesis_hash = hashlib.sha256(b"genesis_triad").hexdigest()
+        if not self.triads:
+            genesis_triad_id = str(uuid.uuid4())
+            genesis_parent_hashes = []
+            genesis_transactions = []
 
-        genesis_triad = Triad(
-            index=0,
-            timestamp=time.time(),
-            transactions=[],
-            nonce=0,
-            previous_hash="0" * 64, # A string of 64 zeros for the first block
-            hash=genesis_hash, # CORRECTED: Changed 'current_hash' to 'hash'
-            difficulty=self.config.DIFFICULTY,
-            miner_address="GENESIS_MINE_WALLET_ADDRESS" # Placeholder for genesis miner
-        )
-        self.chain.append(genesis_triad)
-        print("Ledger initialized with Genesis Triad.")
+            temp_genesis_triad = Triad(
+                triad_id=genesis_triad_id,
+                depth=0,
+                parent_hashes=genesis_parent_hashes,
+                transactions=genesis_transactions,
+                nonce=0,
+                hash="temp_hash",
+                difficulty=self.config.DIFFICULTY,
+                miner_address="GENESIS_MINE_WALLET_ADDRESS"
+            )
+            genesis_hash = temp_genesis_triad.calculate_hash()
+
+            genesis_triad = Triad(
+                triad_id=genesis_triad_id,
+                depth=0,
+                parent_hashes=genesis_parent_hashes,
+                transactions=genesis_transactions,
+                nonce=0,
+                hash=genesis_hash,
+                difficulty=self.config.DIFFICULTY,
+                miner_address="GENESIS_MINE_WALLET_ADDRESS"
+            )
+            self.triads[genesis_triad.hash] = genesis_triad
+            print("Ledger initialized with Genesis Triad.")
+        else:
+            print("Genesis Triad already exists.")
 
     def save_ledger(self, network):
-        """Saves the current ledger data to a JSON file."""
         ledger_file = f"ledger_{network}.json"
-        # Convert Triad objects to dictionaries for serialization
-        chain_data = [triad.to_dict() for triad in self.chain]
+        triads_data = {hash_key: triad.to_dict() for hash_key, triad in self.triads.items()}
         with open(ledger_file, 'w') as f:
-            json.dump({"chain": chain_data}, f, indent=2)
+            json.dump({"triads": triads_data}, f, indent=2)
 
     def print_ledger_status(self):
-        """Prints a summary of the ledger's current state."""
-        print(f"  Total Triads in Ledger: {len(self.chain)}")
-        if self.chain:
-            last_triad = self.get_latest_triad()
-            print(f"  Last Triad Index: {last_triad.index}")
-            print(f"  Last Triad Hash: {last_triad.hash[:10]}...")
-            print(f"  Last Triad Transactions: {len(last_triad.transactions)}")
+        print(f"  Total Triads in Ledger: {len(self.triads)}")
+        print(f"  Current Max Depth: {self.get_max_current_depth()}")
+        if self.triads:
+            depth_counts = {}
+            for triad in self.triads.values():
+                depth_counts[triad.depth] = depth_counts.get(triad.depth, 0) + 1
+            print("  Triads per Depth Level:")
+            for depth in sorted(depth_counts.keys()):
+                print(f"    Depth {depth}: {depth_counts[depth]} Triads")
+

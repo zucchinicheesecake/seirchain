@@ -1,10 +1,12 @@
+# seirchain/config.py
 import json
 import os
 
 class Config:
     """
-    Manages global configuration settings for the blockchain network.
-    Implemented as a Singleton.
+    Manages the simulation's configuration.
+    Implemented as a Singleton to ensure all parts of the application
+    use the same configuration.
     """
     _instance = None
     _initialized = False
@@ -16,59 +18,52 @@ class Config:
 
     def __init__(self):
         if not self._initialized:
-            self.DIFFICULTY = 0          # Number of leading zeros required for proof-of-work
-            self.MAX_DEPTH = 0           # Max depth for ledger/chain
-            self.MINING_REWARD = 0.0     # Reward for mining a block
-            self.TRANSACTION_FEE = 0.0   # Fee for a transaction
+            self.DIFFICULTY = 4 # Default mining difficulty (number of leading zeros)
+            self.MAX_DEPTH = 8 # Maximum depth of the Triad Matrix
+            self.MINING_REWARD = 10.0 # Reward for mining a Triad
+            self.TRANSACTION_FEE = 0.05 # Fee per transaction
+            self.MAX_TRANSACTIONS_TO_SIMULATE = 20 # Default number of transactions for simulation
+            # Note: More config parameters can be added here as needed (e.g., node count, etc.)
+
             self._initialized = True
 
     @classmethod
     def instance(cls):
         """Returns the singleton instance of Config."""
         if cls._instance is None:
-            cls() # This ensures __init__ is called only once for the singleton
+            cls() # This calls __init__
         return cls._instance
 
-    def load_config(self, network_name):
+    def load_config(self, network="mainnet"):
         """
-        Loads configuration from a JSON file for the specified network.
-        If the file doesn't exist or there's an error, it uses default values.
+        Loads configuration from a JSON file based on the network name.
+        Allows overriding default values.
         """
-        config_file = f"config_{network_name}.json"
-        if os.path.exists(config_file):
-            try:
-                with open(config_file, 'r') as f:
-                    data = json.load(f)
-                    self.DIFFICULTY = data.get('difficulty', 4)
-                    self.MAX_DEPTH = data.get('max_depth', 8)
-                    self.MINING_REWARD = data.get('mining_reward', 10.0)
-                    self.TRANSACTION_FEE = data.get('transaction_fee', 0.05)
+        config_file = f"config_{network}.json"
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', config_file)
+
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as f:
+                config_data = json.load(f)
+                
+                # Update instance attributes with values from the config file
+                self.DIFFICULTY = config_data.get('DIFFICULTY', self.DIFFICULTY)
+                self.MAX_DEPTH = config_data.get('MAX_DEPTH', self.MAX_DEPTH)
+                self.MINING_REWARD = config_data.get('MINING_REWARD', self.MINING_REWARD)
+                self.TRANSACTION_FEE = config_data.get('TRANSACTION_FEE', self.TRANSACTION_FEE)
+                self.MAX_TRANSACTIONS_TO_SIMULATE = config_data.get('MAX_TRANSACTIONS_TO_SIMULATE', self.MAX_TRANSACTIONS_TO_SIMULATE)
+
                 print(f"Configuration loaded from {config_file}.")
-            except Exception as e:
-                print(f"Error loading config from {config_file}: {e}. Using default values.")
-                self._set_default_config() # Set program defaults if file loading fails
         else:
-            print(f"No existing config file found at {config_file}. Initializing with default values.")
-            self._set_default_config() # Set program defaults if file doesn't exist
+            print(f"Warning: Config file '{config_file}' not found. Using default configurations.")
 
-        # Ensure a config file is always saved after loading/initializing
-        self._save_config(network_name)
-
-    def _set_default_config(self):
-        """Internal method to set predefined default configuration values."""
-        self.DIFFICULTY = 4
-        self.MAX_DEPTH = 8
-        self.MINING_REWARD = 10.0
-        self.TRANSACTION_FEE = 0.05
-
-    def _save_config(self, network_name):
-        """Internal method to save the current configuration to a JSON file."""
-        config_file = f"config_{network_name}.json"
-        data = {
-            'difficulty': self.DIFFICULTY,
-            'max_depth': self.MAX_DEPTH,
-            'mining_reward': self.MINING_REWARD,
-            'transaction_fee': self.TRANSACTION_FEE
+    def to_dict(self):
+        """Returns the current configuration as a dictionary."""
+        return {
+            "DIFFICULTY": self.DIFFICULTY,
+            "MAX_DEPTH": self.MAX_DEPTH,
+            "MINING_REWARD": self.MINING_REWARD,
+            "TRANSACTION_FEE": self.TRANSACTION_FEE,
+            "MAX_TRANSACTIONS_TO_SIMULATE": self.MAX_TRANSACTIONS_TO_SIMULATE
         }
-        with open(config_file, 'w') as f:
-            json.dump(data, f, indent=2)
+
