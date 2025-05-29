@@ -1,0 +1,92 @@
+{
+    "root": {
+        "triangle_id": "0000774d34bd7c10fa24b402bca652fd968faa62a4e2d2a00dba1bb1f0b480c9",
+        "parent_id": null,
+        "depth": 0,
+        "transactions": [
+            {
+                "transaction_data": {
+                    "from_addr": "0000000000000000000000000000000000000000",
+                    "to_addr": "GENESIS_MINER_seir-mainnet-1",
+                    "amount": 1000000.0,
+                    "fee": 0.0,
+                    "timestamp": 1748506282.9406443
+                },
+                "tx_hash": "58cbc3478743e12f4ef43b55773ff581407078460f632cbc4aafd6f764f537e5",
+                "timestamp": 1748506282.940745
+            },
+            {
+                "transaction_data": {
+                    "from_addr": "0000000000000000000000000000000000000000",
+                    "to_addr": "GENESIS_MINER_seir-mainnet-1",
+                    "amount": 1000000.0,
+                    "fee": 0.0,
+                    "timestamp": 1748506282.9406443
+                },
+                "tx_hash": "58cbc3478743e12f4ef43b55773ff581407078460f632cbc4aafd6f764f537e5",
+                "timestamp": 1748506282.9407914
+            },
+            {
+                "transaction_data": {
+                    "from_addr": "GENESIS_MINER_seir-mainnet-1",
+                    "to_addr": "31adf8663bc06988520d79e9c7694f3fe51ec5f3d75cc9295ffa40ccab08f048",
+                    "amount": 2000.0,
+                    "fee": 0.0,
+                    "timestamp": 1748506283.4762964
+                },
+                "tx_hash": "8f6ed5f38704e57387b9c6d3a7125fee2efebbe94065063803a473dd2c534584",
+                "timestamp": 1748506283.4764218
+            },
+            {
+                "transaction_data": {
+                    "from_addr": "GENESIS_MINER_seir-mainnet-1",
+                    "to_addr": "51dff0d2991e21720f94eed402b8da2ce8fd1fb404b4bcd0a152cb799bf91c0c",
+                    "amount": 2000.0,
+                    "fee": 0.0,
+                    "timestamp": 1748506283.476302
+                },
+                "tx_hash": "9a52374b55a8460eeab1967d2327a606fdfb2ee37323f54bb43b02d77453becf",
+                "timestamp": 1748506285.092464
+            },
+            {
+                "transaction_data": {
+                    "from_addr": "GENESIS_MINER_seir-mainnet-1",
+                    "to_addr": "b1418ce14c5c91b077798db5fffc4437cac21f167c7c6cccb7daee6046b2d2aa",
+                    "amount": 2000.0,
+                    "fee": 0.0,
+                    "timestamp": 1748506283.4763057
+                },
+                "tx_hash": "7c421601103f89419b4dc05d25c9ca3162bc6156756d09c8cefb6c8b350cc910",
+                "timestamp": 1748506287.995108
+            },
+            {
+                "transaction_data": {
+                    "from_addr": "GENESIS_MINER_seir-mainnet-1",
+                    "to_addr": "a92d8d7d355f29a054420f3c4be8819b0ab9f5811a4bcc5b0cbf7cef9bacbf52",
+                    "amount": 2000.0,
+                    "fee": 0.0,
+                    "timestamp": 1748506283.4763095
+                },
+                "tx_hash": "b66505c994870398ad87567f44b1eb440b8471d89ab1ce823c4c6ae1c33d3f76",
+                "timestamp": 1748506288.4109197
+            },
+            {
+                "transaction_data": {
+                    "from_addr": "GENESIS_MINER_seir-mainnet-1",
+                    "to_addr": "3ee882eed6fb845fb855c35228c320934c85abf8aa72996664dd1a656861b541",
+                    "amount": 2000.0,
+                    "fee": 0.0,
+                    "timestamp": 1748506283.4763129
+                },
+                "tx_hash": "72b132ec8f5ca3fb03eebfebdac66765c77813fc89afef6a595b7b2289e8b04a",
+                "timestamp": 1748506290.4777029
+            }
+        ],
+        "children": [],
+        "mined_by": "GENESIS_MINER_seir-mainnet-1",
+        "timestamp": 1748506290.729929,
+        "nonce": 12685
+    },
+    "max_depth": 8,
+    "ledger_version": "seir-main-1.0"
+}

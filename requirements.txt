@@ -1,0 +1,6 @@
+ecdsa==0.18.0
+cryptography==42.0.5
+pyfiglet==1.0.2
+tqdm==4.66.2
+psutil==5.9.8
+base58==2.1.1

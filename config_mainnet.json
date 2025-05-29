@@ -1,0 +1,6 @@
+{
+  "difficulty": 4,
+  "max_depth": 8,
+  "mining_reward": 10.0,
+  "transaction_fee": 0.05
+}

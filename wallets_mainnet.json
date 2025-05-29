@@ -1,0 +1,12 @@
+{
+  "wallets": {
+    "b8d9f20e0e5963e0613c9d62018270713cb7179b5658cbb8c9682743794d53c9": {
+      "balance": 1999854.83,
+      "name": "GENESIS_MINE_WALLET"
+    },
+    "b340ba844a73b6b9fdc12b9505af7d95eaeaddc188f74287c1606d36713995b8": {
+      "balance": 1244.67,
+      "name": null
+    }
+  }
+}

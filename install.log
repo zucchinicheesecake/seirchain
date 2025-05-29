@@ -1,0 +1,170 @@
+2025-05-28 20:02:34 - [1;33m[1/7] 🔍 Checking system dependencies...[0m
+Ign:1 http://packages.linuxmint.com xia InRelease
+Hit:2 http://archive.ubuntu.com/ubuntu noble InRelease
+Hit:3 http://packages.linuxmint.com xia Release
+Hit:4 http://archive.ubuntu.com/ubuntu noble-updates InRelease
+Hit:5 http://archive.ubuntu.com/ubuntu noble-backports InRelease
+Hit:6 https://dl.yarnpkg.com/debian stable InRelease
+Hit:7 https://deb.termius.com squeeze InRelease
+Get:8 https://dl.google.com/linux/chrome/deb stable InRelease [1,825 B]
+Hit:9 https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 InRelease
+Hit:10 https://packages.microsoft.com/repos/code stable InRelease
+Hit:11 http://ddebs.ubuntu.com noble InRelease
+Hit:12 http://ddebs.ubuntu.com noble-updates InRelease
+Hit:13 https://deb.nodesource.com/node_18.x nodistro InRelease
+Hit:14 https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu noble InRelease
+Hit:15 https://assets.checkra.in/debian  InRelease
+Hit:16 https://ppa.launchpadcontent.net/ethereum/ethereum/ubuntu noble InRelease
+Get:18 https://dl.google.com/linux/chrome/deb stable/main amd64 Packages [1,207 B]
+Hit:19 http://security.ubuntu.com/ubuntu noble-security InRelease
+Fetched 3,032 B in 23s (132 B/s)
+Reading package lists...
+W: https://repo.mongodb.org/apt/ubuntu/dists/focal/mongodb-org/6.0/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+W: https://assets.checkra.in/debian/InRelease: Key is stored in legacy trusted.gpg keyring (/etc/apt/trusted.gpg), see the DEPRECATION section in apt-key(8) for details.
+Reading package lists...
+Building dependency tree...
+Reading state information...
+software-properties-common is already the newest version (2.3.2).
+0 upgraded, 0 newly installed, 0 to remove and 129 not upgraded.
+gpg: keybox '/etc/apt/keyrings/F23C5A6CF475977595C89F51BA6932366A755776.keyring' created
+gpg: key BA6932366A755776: public key "Launchpad PPA for deadsnakes" imported
+gpg: Total number processed: 1
+gpg:               imported: 1
+You are about to add the following PPA:
+ This PPA contains more recent Python versions packaged for Ubuntu.
+
+Disclaimer: there's no guarantee of timely updates in case of security problems or other issues. If you want to use them in a security-or-otherwise-critical environment (say, on a production server), you do so at your own risk.
+
+Update Note
+===========
+Please use this repository instead of ppa:fkrull/deadsnakes.
+
+Reporting Issues
+================
+
+Issues can be reported in the master issue tracker at:
+https://github.com/deadsnakes/issues/issues
+
+Supported Ubuntu and Python Versions
+====================================
+
+- Ubuntu 20.04 (focal) Python3.5 - Python3.7, Python3.9 - Python3.13
+- Ubuntu 22.04 (jammy) Python3.7 - Python3.9, Python3.11 - Python3.13
+- Ubuntu 24.04 (noble) Python3.7 - Python3.11, Python3.13
+- Note: Python2.7 (focal, jammy), Python 3.8 (focal), Python 3.10 (jammy), Python3.12 (noble) are not provided by deadsnakes as upstream ubuntu provides those packages.
+
+Why some packages aren't built:
+- Note: for focal, older python versions require libssl<1.1 so they are not currently built
+- Note: for jammy and noble, older python versions requre libssl<3 so they are not currently built
+- If you need these, reach out to asottile to set up a private ppa
+
+The packages may also work on other versions of Ubuntu or Debian, but that is not tested or supported.
+
+Packages
+========
+
+The packages provided here are loosely based on the debian upstream packages with some modifications to make them more usable as non-default pythons and on ubuntu.  As such, the packages follow debian's patterns and often do not include a full python distribution with just `apt install python#.#`.  Here is a list of packages that may be useful along with the default install:
+
+- `python#.#-dev`: includes development headers for building C extensions
+- `python#.#-venv`: provides the standard library `venv` module
+- `python#.#-distutils`: provides the standard library `distutils` module
+- `python#.#-lib2to3`: provides the `2to3-#.#` utility as well as the standard library `lib2to3` module
+- `python#.#-gdbm`: provides the standard library `dbm.gnu` module
+- `python#.#-tk`: provides the standard library `tkinter` module
+
+Third-Party Python Modules
+==========================
+
+Python modules in the official Ubuntu repositories are packaged to work with the Python interpreters from the official repositories. Accordingly, they generally won't work with the Python interpreters from this PPA. As an exception, pure-Python modules for Python 3 will work, but any compiled extension modules won't.
+
+To install 3rd-party Python modules, you should use the common Python packaging tools.  For an introduction into the Python packaging ecosystem and its tools, refer to the Python Packaging User Guide:
+https://packaging.python.org/installing/
+
+Sources
+=======
+The package sources are available at:
+https://github.com/deadsnakes/
+
+Nightly Builds
+==============
+
+For nightly builds, see ppa:deadsnakes/nightly https://launchpad.net/~deadsnakes/+archive/ubuntu/nightly
+ More info: https://launchpad.net/~deadsnakes/+archive/ubuntu/ppa
+Reading package lists...
+Building dependency tree...
+Reading state information...
+python3.10 is already the newest version (3.10.17-1+noble1).
+python3.10-venv is already the newest version (3.10.17-1+noble1).
+python3.10-dev is already the newest version (3.10.17-1+noble1).
+0 upgraded, 0 newly installed, 0 to remove and 129 not upgraded.
+Reading package lists...
+Building dependency tree...
+Reading state information...
+build-essential is already the newest version (12.10ubuntu1).
+libssl-dev is already the newest version (3.0.13-0ubuntu3.5).
+libffi-dev is already the newest version (3.4.6-1build1).
+0 upgraded, 0 newly installed, 0 to remove and 129 not upgraded.
+2025-05-28 20:03:43 - [1;33m[2/7] 🐍 Setting up Python virtual environment...[0m
+2025-05-28 20:03:53 - [1;33m[3/7] 📦 Installing Python dependencies...[0m
+Requirement already satisfied: pip in ./venv/lib/python3.10/site-packages (23.0.1)
+Collecting pip
+  Using cached pip-25.1.1-py3-none-any.whl (1.8 MB)
+Installing collected packages: pip
+  Attempting uninstall: pip
+    Found existing installation: pip 23.0.1
+    Uninstalling pip-23.0.1:
+      Successfully uninstalled pip-23.0.1
+Successfully installed pip-25.1.1
+Collecting ecdsa==0.18.0 (from -r /home/amy/seirchain/requirements.txt (line 1))
+  Using cached ecdsa-0.18.0-py2.py3-none-any.whl.metadata (29 kB)
+Collecting cryptography==42.0.5 (from -r /home/amy/seirchain/requirements.txt (line 2))
+  Using cached cryptography-42.0.5-cp39-abi3-manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+Collecting pyfiglet==1.0.2 (from -r /home/amy/seirchain/requirements.txt (line 3))
+  Using cached pyfiglet-1.0.2-py3-none-any.whl.metadata (7.1 kB)
+Collecting tqdm==4.66.2 (from -r /home/amy/seirchain/requirements.txt (line 4))
+  Using cached tqdm-4.66.2-py3-none-any.whl.metadata (57 kB)
+Collecting psutil==5.9.8 (from -r /home/amy/seirchain/requirements.txt (line 5))
+  Using cached psutil-5.9.8-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (21 kB)
+Collecting base58==2.1.1 (from -r /home/amy/seirchain/requirements.txt (line 6))
+  Using cached base58-2.1.1-py3-none-any.whl.metadata (3.1 kB)
+Collecting six>=1.9.0 (from ecdsa==0.18.0->-r /home/amy/seirchain/requirements.txt (line 1))
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting cffi>=1.12 (from cryptography==42.0.5->-r /home/amy/seirchain/requirements.txt (line 2))
+  Using cached cffi-1.17.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.5 kB)
+Collecting pycparser (from cffi>=1.12->cryptography==42.0.5->-r /home/amy/seirchain/requirements.txt (line 2))
+  Using cached pycparser-2.22-py3-none-any.whl.metadata (943 bytes)
+Using cached ecdsa-0.18.0-py2.py3-none-any.whl (142 kB)
+Using cached cryptography-42.0.5-cp39-abi3-manylinux_2_28_x86_64.whl (4.6 MB)
+Using cached pyfiglet-1.0.2-py3-none-any.whl (1.1 MB)
+Using cached tqdm-4.66.2-py3-none-any.whl (78 kB)
+Using cached psutil-5.9.8-cp36-abi3-manylinux_2_12_x86_64.manylinux2010_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl (288 kB)
+Using cached base58-2.1.1-py3-none-any.whl (5.6 kB)
+Using cached cffi-1.17.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (446 kB)
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Using cached pycparser-2.22-py3-none-any.whl (117 kB)
+Installing collected packages: tqdm, six, pyfiglet, pycparser, psutil, base58, ecdsa, cffi, cryptography
+
+Successfully installed base58-2.1.1 cffi-1.17.1 cryptography-42.0.5 ecdsa-0.18.0 psutil-5.9.8 pycparser-2.22 pyfiglet-1.0.2 six-1.17.0 tqdm-4.66.2
+2025-05-28 20:04:16 - [1;33m[4/7] 🏗️  Building project structure...[0m
+2025-05-28 20:04:16 - [1;33m[5/7] 💾 Writing project files...[0m
+2025-05-28 20:04:16 - [1;33m[6/7] 🚀 Finalizing installation...[0m
+2025-05-28 20:04:16 - [1;33m[7/7] ⚙️  Generating configuration...[0m
+2025-05-28 20:04:16 - [1;33m[8/8] 🔍 Validating installation...[0m
+Core imports successful
+2025-05-28 20:04:16 -    ✅ Core imports successful.
+2025-05-28 20:04:16 - 
+[1;32m✔ Installation completed successfully![0m
+2025-05-28 20:04:16 - [1mTotal time: 1m42s[0m
+2025-05-28 20:04:16 - 
+[1mNext steps:[0m
+2025-05-28 20:04:16 - 1. Activate virtual environment:
+2025-05-28 20:04:16 -    [1mcd /home/amy/seirchain && source venv/bin/activate[0m
+2025-05-28 20:04:16 - 2. Run simulation:
+2025-05-28 20:04:16 -    [1m./run_simulation.sh[0m
+2025-05-28 20:04:16 - 3. Run diagnostics:
+2025-05-28 20:04:16 -    [1m./seir_diag.sh[0m
+2025-05-28 20:04:16 - 
+To deactivate: [1mdeactivate[0m
+2025-05-28 20:04:16 - 
+[1;36mFractal blockchain ready for exploration! 🌌[0m
+
