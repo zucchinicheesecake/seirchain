@@ -27,7 +27,7 @@ The easiest way to set up SeirChain is by using the automated quick start script
 2.  **Run the quick start script:**
 
     ```bash
-    git clone [https://github.com/your-username/seirchain.git](https://github.com/your-username/seirchain.git) # Replace with your actual repo URL
+    git clone [https://](https://github.com/zucchinicheesecake/seirchain.git) # Replace with your actual repo URL
     cd seirchain
     chmod +x quick_start_setup.sh # Make the script executable
     ./quick_start_setup.sh
