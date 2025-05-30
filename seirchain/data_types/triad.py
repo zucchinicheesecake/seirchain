@@ -1,84 +1,84 @@
-# seirchain/data_types/triad.py
 import hashlib
 import json
 import time
 
 class Triad:
-    """
-    Represents a Triad (block) in the SeirChain's fractal ledger.
-    Each Triad can have multiple parent hashes, allowing for the branching structure.
-    """
-    def __init__(self, triad_id, depth, parent_hashes, transactions, nonce, hash, difficulty, miner_address):
-        self.triad_id = triad_id # A unique identifier for this Triad
-        self.depth = depth # The depth level in the fractal matrix
-        self.parent_hashes = parent_hashes if parent_hashes is not None else [] # List of parent Triad hashes
+    MAX_CHILD_CAPACITY = 3 # This should align with config.MAX_CHILD_CAPACITY
+
+    def __init__(self, triad_id, depth, parent_hashes, transactions, nonce, difficulty, miner_address, timestamp=None, current_hash=None, child_hashes=None):
+        self.triad_id = triad_id
+        self.depth = depth
+        self.parent_hashes = sorted(parent_hashes) # Ensure consistent hashing
+        self.timestamp = timestamp if timestamp is not None else time.time()
         self.transactions = transactions # List of TransactionNode objects
         self.nonce = nonce
-        self.timestamp = time.time() # Timestamp of creation
-        self.hash = hash # The calculated hash of this Triad
         self.difficulty = difficulty
         self.miner_address = miner_address
-        self.child_hashes = [] # List to store hashes of Triads that reference this Triad as a parent
+        self.hash = current_hash if current_hash is not None else self.calculate_hash() # Calculate hash on init if not provided
+        self.child_hashes = child_hashes if child_hashes is not None else [] # To be populated by ledger
 
     def calculate_hash(self):
-        """
-        Calculates the SHA256 hash of the Triad, incorporating parent hashes.
-        """
-        transactions_data = [tx.to_dict() for tx in self.transactions]
-        transaction_string = json.dumps(transactions_data, sort_keys=True)
-        
-        parent_hashes_string = json.dumps(sorted(self.parent_hashes), sort_keys=True)
+        # Ensure transactions are sorted for consistent hashing
+        # Convert TransactionNode objects to dictionaries for hashing
+        transactions_data = [tx.to_dict() if hasattr(tx, 'to_dict') else tx for tx in self.transactions]
+        transactions_data_sorted = sorted(transactions_data, key=lambda x: x.get('tx_id', '')) # Sort by tx_id
 
-        triad_string = f"{self.triad_id}{self.depth}{parent_hashes_string}{self.timestamp}{transaction_string}{self.nonce}{self.difficulty}{self.miner_address}"
+        triad_string = f"{self.triad_id}" \
+                       f"{self.depth}" \
+                       f"{json.dumps(self.parent_hashes, sort_keys=True)}" \
+                       f"{self.timestamp}" \
+                       f"{json.dumps(transactions_data_sorted, sort_keys=True)}" \
+                       f"{self.nonce}" \
+                       f"{self.difficulty}" \
+                       f"{self.miner_address}"
+        
         return hashlib.sha256(triad_string.encode('utf-8')).hexdigest()
 
     def add_child_hash(self, child_hash):
-        """Adds a child Triad's hash to this Triad's list of children."""
-        if child_hash not in self.child_hashes:
+        """Adds a child hash to this triad, if capacity allows."""
+        if child_hash not in self.child_hashes and len(self.child_hashes) < self.MAX_CHILD_CAPACITY:
             self.child_hashes.append(child_hash)
             return True
         return False
 
     def is_full(self):
-        """Checks if this Triad has reached its maximum number of children (3)."""
-        return len(self.child_hashes) >= 3 # Triads can have up to 3 children
+        """Checks if the triad has reached its maximum child capacity."""
+        return len(self.child_hashes) >= self.MAX_CHILD_CAPACITY
 
     def to_dict(self):
         """Converts the Triad object to a dictionary for serialization."""
         return {
-            'triad_id': self.triad_id,
-            'depth': self.depth,
-            'parent_hashes': self.parent_hashes,
-            'transactions': [tx.to_dict() for tx in self.transactions],
-            'nonce': self.nonce,
-            'timestamp': self.timestamp,
-            'hash': self.hash,
-            'difficulty': self.difficulty,
-            'miner_address': self.miner_address,
-            'child_hashes': self.child_hashes
+            "triad_id": self.triad_id,
+            "depth": self.depth,
+            "parent_hashes": self.parent_hashes,
+            "timestamp": self.timestamp,
+            "transactions": [tx.to_dict() if hasattr(tx, 'to_dict') else tx for tx in self.transactions], # Convert transactions to dicts
+            "nonce": self.nonce,
+            "difficulty": self.difficulty,
+            "miner_address": self.miner_address,
+            "hash": self.hash,
+            "child_hashes": self.child_hashes
         }
 
     @classmethod
     def from_dict(cls, data):
         """Creates a Triad object from a dictionary."""
-        from seirchain.data_types.transaction_node import TransactionNode # Import here to avoid circular dependency
-        transactions = [TransactionNode.from_dict(tx_data) for tx_data in data.get('transactions', [])]
+        # Import locally to avoid circular dependency issues if TransactionNode also imports Triad
+        from seirchain.data_types.transaction_node import TransactionNode 
+
+        # Convert transaction dictionaries back to TransactionNode objects
+        transactions = [TransactionNode.from_dict(tx_data) for tx_data in data.get("transactions", [])]
         
-        instance = cls(
-            triad_id=data['triad_id'],
-            depth=data['depth'],
-            parent_hashes=data.get('parent_hashes', []),
+        triad = cls(
+            triad_id=data["triad_id"],
+            depth=data["depth"],
+            parent_hashes=data.get("parent_hashes", []), # Use .get with default for robustness
             transactions=transactions,
-            nonce=data['nonce'],
-            hash=data['hash'],
-            difficulty=data['difficulty'],
-            miner_address=data['miner_address']
+            nonce=data["nonce"],
+            difficulty=data["difficulty"],
+            miner_address=data["miner_address"],
+            timestamp=data.get("timestamp"), # Pass timestamp from data
+            current_hash=data.get("hash"),     # Pass hash from data
+            child_hashes=data.get("child_hashes", []) # Pass child_hashes from data
         )
-        instance.child_hashes = data.get('child_hashes', [])
-        return instance
-
-    def __repr__(self):
-        return (f"Triad(id={self.triad_id[:8]}..., depth={self.depth}, "
-                f"parents={len(self.parent_hashes)}, children={len(self.child_hashes)}, "
-                f"hash={self.hash[:8]}...)")
-
+        return triad

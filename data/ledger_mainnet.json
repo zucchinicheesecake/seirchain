@@ -1,0 +1,460 @@
+{
+  "0000357154ec2e3a11fe44758562d17d164cbadfb0dc9a5175004c6b3446c18e": {
+    "triad_id": "genesis_triad",
+    "depth": 0,
+    "parent_hashes": [],
+    "timestamp": 1748571313.1330109,
+    "transactions": [],
+    "nonce": 20920,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000357154ec2e3a11fe44758562d17d164cbadfb0dc9a5175004c6b3446c18e",
+    "child_hashes": [
+      "0000943c12b6b69e723bcfa8b75b024589c199de2b0a4b9031b1991d03b0dbff",
+      "0000b6bdd947e8cc574e0998388f3eca7b5200ea762332617fc14d3a3eef5242"
+    ]
+  },
+  "0000943c12b6b69e723bcfa8b75b024589c199de2b0a4b9031b1991d03b0dbff": {
+    "triad_id": "triad_1_1748571336.5425744_48574",
+    "depth": 1,
+    "parent_hashes": [
+      "0000357154ec2e3a11fe44758562d17d164cbadfb0dc9a5175004c6b3446c18e"
+    ],
+    "timestamp": 1748571336.5426157,
+    "transactions": [
+      {
+        "sender_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 11.37280880134984,
+        "fee": 0.001,
+        "timestamp": 1748571336.5409803,
+        "tx_id": "sim_tx_1748571336.540982_70265"
+      }
+    ],
+    "nonce": 6195,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000943c12b6b69e723bcfa8b75b024589c199de2b0a4b9031b1991d03b0dbff",
+    "child_hashes": [
+      "0000b6128192e3574071175749826c6c026e21e922dabea7eb0adc2e46219ae4"
+    ]
+  },
+  "0000b6bdd947e8cc574e0998388f3eca7b5200ea762332617fc14d3a3eef5242": {
+    "triad_id": "triad_2_1748571374.3169887_59594",
+    "depth": 1,
+    "parent_hashes": [
+      "0000357154ec2e3a11fe44758562d17d164cbadfb0dc9a5175004c6b3446c18e"
+    ],
+    "timestamp": 1748571374.3170207,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "amount": 18.682347819471175,
+        "fee": 0.001,
+        "timestamp": 1748571374.3155618,
+        "tx_id": "sim_tx_1748571374.3155632_30913"
+      }
+    ],
+    "nonce": 43546,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000b6bdd947e8cc574e0998388f3eca7b5200ea762332617fc14d3a3eef5242",
+    "child_hashes": [
+      "00007c708ada1d2724948b2b52097ce915dd6103cb9f727e3068302d00b0ddfc"
+    ]
+  },
+  "0000b6128192e3574071175749826c6c026e21e922dabea7eb0adc2e46219ae4": {
+    "triad_id": "triad_2_1748571414.0596235_1065",
+    "depth": 2,
+    "parent_hashes": [
+      "0000943c12b6b69e723bcfa8b75b024589c199de2b0a4b9031b1991d03b0dbff"
+    ],
+    "timestamp": 1748571414.0596554,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 11.687876098318496,
+        "fee": 0.001,
+        "timestamp": 1748571414.058169,
+        "tx_id": "sim_tx_1748571414.0581706_23914"
+      }
+    ],
+    "nonce": 125337,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000b6128192e3574071175749826c6c026e21e922dabea7eb0adc2e46219ae4",
+    "child_hashes": []
+  },
+  "00007c708ada1d2724948b2b52097ce915dd6103cb9f727e3068302d00b0ddfc": {
+    "triad_id": "triad_3_1748571526.0174124_3578",
+    "depth": 2,
+    "parent_hashes": [
+      "0000b6bdd947e8cc574e0998388f3eca7b5200ea762332617fc14d3a3eef5242"
+    ],
+    "timestamp": 1748571526.0174444,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 4.016043055585162,
+        "fee": 0.001,
+        "timestamp": 1748571526.0158832,
+        "tx_id": "sim_tx_1748571526.015885_34127"
+      }
+    ],
+    "nonce": 94766,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "00007c708ada1d2724948b2b52097ce915dd6103cb9f727e3068302d00b0ddfc",
+    "child_hashes": [
+      "0000aced5dbefaebae2548f1aa1bcf5e3b956981e56d9b2c96d58562e337ec25"
+    ]
+  },
+  "0000aced5dbefaebae2548f1aa1bcf5e3b956981e56d9b2c96d58562e337ec25": {
+    "triad_id": "triad_3_1748571549.9055512_83089",
+    "depth": 3,
+    "parent_hashes": [
+      "00007c708ada1d2724948b2b52097ce915dd6103cb9f727e3068302d00b0ddfc"
+    ],
+    "timestamp": 1748571549.9055831,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "amount": 11.809334504246486,
+        "fee": 0.001,
+        "timestamp": 1748571549.9039602,
+        "tx_id": "sim_tx_1748571549.9039621_47032"
+      }
+    ],
+    "nonce": 89888,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000aced5dbefaebae2548f1aa1bcf5e3b956981e56d9b2c96d58562e337ec25",
+    "child_hashes": [
+      "00005399a0cd481d90a601a81c70e7948a642a8a628526f205da966e1c303672",
+      "0000b66f016db58834483c16317ffeac07c7a1aa350aa3faa672ee119022f633",
+      "0000f99e88ac420168238fe70c49c8594831dc1dddf43dba2c39d844819d2169"
+    ]
+  },
+  "00005399a0cd481d90a601a81c70e7948a642a8a628526f205da966e1c303672": {
+    "triad_id": "triad_4_1748571595.714543_65243",
+    "depth": 4,
+    "parent_hashes": [
+      "0000aced5dbefaebae2548f1aa1bcf5e3b956981e56d9b2c96d58562e337ec25"
+    ],
+    "timestamp": 1748571595.7145746,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "amount": 4.523837933030158,
+        "fee": 0.001,
+        "timestamp": 1748571595.7128906,
+        "tx_id": "sim_tx_1748571595.7128925_7498"
+      }
+    ],
+    "nonce": 117018,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "00005399a0cd481d90a601a81c70e7948a642a8a628526f205da966e1c303672",
+    "child_hashes": [
+      "00006176b4d89d096bdea69c803bb8a59d49d482119190a9f27d87d395b87aae"
+    ]
+  },
+  "0000b66f016db58834483c16317ffeac07c7a1aa350aa3faa672ee119022f633": {
+    "triad_id": "triad_5_1748571618.4976902_28687",
+    "depth": 4,
+    "parent_hashes": [
+      "0000aced5dbefaebae2548f1aa1bcf5e3b956981e56d9b2c96d58562e337ec25"
+    ],
+    "timestamp": 1748571618.497724,
+    "transactions": [
+      {
+        "sender_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 19.39694544845744,
+        "fee": 0.001,
+        "timestamp": 1748571618.4959545,
+        "tx_id": "sim_tx_1748571618.495956_68565"
+      }
+    ],
+    "nonce": 6851,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000b66f016db58834483c16317ffeac07c7a1aa350aa3faa672ee119022f633",
+    "child_hashes": []
+  },
+  "0000f99e88ac420168238fe70c49c8594831dc1dddf43dba2c39d844819d2169": {
+    "triad_id": "triad_5_1748571621.0256426_99250",
+    "depth": 4,
+    "parent_hashes": [
+      "0000aced5dbefaebae2548f1aa1bcf5e3b956981e56d9b2c96d58562e337ec25"
+    ],
+    "timestamp": 1748571621.0256743,
+    "transactions": [
+      {
+        "sender_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "recipient_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "amount": 9.64360374565561,
+        "fee": 0.001,
+        "timestamp": 1748571621.02387,
+        "tx_id": "sim_tx_1748571621.0238717_87385"
+      }
+    ],
+    "nonce": 410673,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000f99e88ac420168238fe70c49c8594831dc1dddf43dba2c39d844819d2169",
+    "child_hashes": [
+      "0000e18be79d7b8dd66b75c7b99142c40406afd7af5c1037f06afa675d8cd164"
+    ]
+  },
+  "00006176b4d89d096bdea69c803bb8a59d49d482119190a9f27d87d395b87aae": {
+    "triad_id": "triad_5_1748571659.8715127_6848",
+    "depth": 5,
+    "parent_hashes": [
+      "00005399a0cd481d90a601a81c70e7948a642a8a628526f205da966e1c303672"
+    ],
+    "timestamp": 1748571659.8715448,
+    "transactions": [
+      {
+        "sender_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 11.689232333109247,
+        "fee": 0.001,
+        "timestamp": 1748571659.8696358,
+        "tx_id": "sim_tx_1748571659.8696375_42548"
+      }
+    ],
+    "nonce": 77199,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "00006176b4d89d096bdea69c803bb8a59d49d482119190a9f27d87d395b87aae",
+    "child_hashes": []
+  },
+  "0000e18be79d7b8dd66b75c7b99142c40406afd7af5c1037f06afa675d8cd164": {
+    "triad_id": "triad_6_1748571667.306324_91289",
+    "depth": 5,
+    "parent_hashes": [
+      "0000f99e88ac420168238fe70c49c8594831dc1dddf43dba2c39d844819d2169"
+    ],
+    "timestamp": 1748571667.3063555,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 5.248685519449203,
+        "fee": 0.001,
+        "timestamp": 1748571667.3043659,
+        "tx_id": "sim_tx_1748571667.3043678_93648"
+      }
+    ],
+    "nonce": 93114,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000e18be79d7b8dd66b75c7b99142c40406afd7af5c1037f06afa675d8cd164",
+    "child_hashes": [
+      "00004829f53316005d78dfbcde891c85753896328f4408d8d49ab6a5d27f2140",
+      "000008eb6250d4f4d1570daff0f99721f931773159e9ea73f8f685788e596ec2"
+    ]
+  },
+  "00004829f53316005d78dfbcde891c85753896328f4408d8d49ab6a5d27f2140": {
+    "triad_id": "triad_6_1748571675.6816876_46491",
+    "depth": 6,
+    "parent_hashes": [
+      "0000e18be79d7b8dd66b75c7b99142c40406afd7af5c1037f06afa675d8cd164"
+    ],
+    "timestamp": 1748571675.6817217,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "amount": 15.503746998601489,
+        "fee": 0.001,
+        "timestamp": 1748571675.6794977,
+        "tx_id": "sim_tx_1748571675.6795003_27736"
+      }
+    ],
+    "nonce": 22216,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "00004829f53316005d78dfbcde891c85753896328f4408d8d49ab6a5d27f2140",
+    "child_hashes": [
+      "00001d2b4fe3b01d01d181725eddcea0c2718c82389d3b0906e1a74163ada9f2"
+    ]
+  },
+  "000008eb6250d4f4d1570daff0f99721f931773159e9ea73f8f685788e596ec2": {
+    "triad_id": "triad_7_1748571679.2866893_47950",
+    "depth": 6,
+    "parent_hashes": [
+      "0000e18be79d7b8dd66b75c7b99142c40406afd7af5c1037f06afa675d8cd164"
+    ],
+    "timestamp": 1748571679.2867217,
+    "transactions": [
+      {
+        "sender_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "recipient_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "amount": 6.139352886280158,
+        "fee": 0.001,
+        "timestamp": 1748571679.2845821,
+        "tx_id": "sim_tx_1748571679.2845836_16248"
+      }
+    ],
+    "nonce": 51904,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "000008eb6250d4f4d1570daff0f99721f931773159e9ea73f8f685788e596ec2",
+    "child_hashes": []
+  },
+  "00001d2b4fe3b01d01d181725eddcea0c2718c82389d3b0906e1a74163ada9f2": {
+    "triad_id": "triad_7_1748571684.8785515_37250",
+    "depth": 7,
+    "parent_hashes": [
+      "00004829f53316005d78dfbcde891c85753896328f4408d8d49ab6a5d27f2140"
+    ],
+    "timestamp": 1748571684.8785849,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "amount": 18.300503032087363,
+        "fee": 0.001,
+        "timestamp": 1748571684.8763585,
+        "tx_id": "sim_tx_1748571684.8763602_31560"
+      }
+    ],
+    "nonce": 22732,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "00001d2b4fe3b01d01d181725eddcea0c2718c82389d3b0906e1a74163ada9f2",
+    "child_hashes": [
+      "0000e8a93bfda6ec128ceffffb0504ce32f163338d5e122d291f7ba5d277c66f"
+    ]
+  },
+  "0000e8a93bfda6ec128ceffffb0504ce32f163338d5e122d291f7ba5d277c66f": {
+    "triad_id": "triad_8_1748571688.4678888_20534",
+    "depth": 8,
+    "parent_hashes": [
+      "00001d2b4fe3b01d01d181725eddcea0c2718c82389d3b0906e1a74163ada9f2"
+    ],
+    "timestamp": 1748571688.4679222,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 9.102033324602946,
+        "fee": 0.001,
+        "timestamp": 1748571688.465629,
+        "tx_id": "sim_tx_1748571688.465631_76113"
+      }
+    ],
+    "nonce": 20715,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000e8a93bfda6ec128ceffffb0504ce32f163338d5e122d291f7ba5d277c66f",
+    "child_hashes": [
+      "000006902b0337b71e2e8a8e1578a2581648e619f7e949624a1cced8fafa249c"
+    ]
+  },
+  "000006902b0337b71e2e8a8e1578a2581648e619f7e949624a1cced8fafa249c": {
+    "triad_id": "triad_9_1748571715.777512_60734",
+    "depth": 9,
+    "parent_hashes": [
+      "0000e8a93bfda6ec128ceffffb0504ce32f163338d5e122d291f7ba5d277c66f"
+    ],
+    "timestamp": 1748571715.7775433,
+    "transactions": [
+      {
+        "sender_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 10.322859988626389,
+        "fee": 0.001,
+        "timestamp": 1748571715.7752469,
+        "tx_id": "sim_tx_1748571715.7752483_59122"
+      }
+    ],
+    "nonce": 43088,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "000006902b0337b71e2e8a8e1578a2581648e619f7e949624a1cced8fafa249c",
+    "child_hashes": [
+      "000066cbee95fd166c52c7755f7305c5b7d4e941c4c3a46c74396fb6a6527c36"
+    ]
+  },
+  "000066cbee95fd166c52c7755f7305c5b7d4e941c4c3a46c74396fb6a6527c36": {
+    "triad_id": "triad_10_1748571801.0015519_8944",
+    "depth": 10,
+    "parent_hashes": [
+      "000006902b0337b71e2e8a8e1578a2581648e619f7e949624a1cced8fafa249c"
+    ],
+    "timestamp": 1748571801.001585,
+    "transactions": [
+      {
+        "sender_address": "6c976961e3232e308f7cf8ca19e73df4",
+        "recipient_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "amount": 11.331436769207528,
+        "fee": 0.001,
+        "timestamp": 1748571800.9992306,
+        "tx_id": "sim_tx_1748571800.9992323_62551"
+      }
+    ],
+    "nonce": 57798,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "000066cbee95fd166c52c7755f7305c5b7d4e941c4c3a46c74396fb6a6527c36",
+    "child_hashes": [
+      "0000c57afd04564351ed22b46d485f53c62fecfdc31243d8c15959627e1477bd"
+    ]
+  },
+  "0000c57afd04564351ed22b46d485f53c62fecfdc31243d8c15959627e1477bd": {
+    "triad_id": "triad_11_1748571812.3390896_89138",
+    "depth": 11,
+    "parent_hashes": [
+      "000066cbee95fd166c52c7755f7305c5b7d4e941c4c3a46c74396fb6a6527c36"
+    ],
+    "timestamp": 1748571812.3391154,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 5.9960233292285166,
+        "fee": 0.001,
+        "timestamp": 1748571812.3374915,
+        "tx_id": "sim_tx_1748571812.337493_77394"
+      }
+    ],
+    "nonce": 70602,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000c57afd04564351ed22b46d485f53c62fecfdc31243d8c15959627e1477bd",
+    "child_hashes": [
+      "0000d4907c7ca7db998b32f2e8e71c5a140a87aba34affdf669e3b9084c528c1"
+    ]
+  },
+  "0000d4907c7ca7db998b32f2e8e71c5a140a87aba34affdf669e3b9084c528c1": {
+    "triad_id": "triad_12_1748571920.8378727_38653",
+    "depth": 12,
+    "parent_hashes": [
+      "0000c57afd04564351ed22b46d485f53c62fecfdc31243d8c15959627e1477bd"
+    ],
+    "timestamp": 1748571920.8378954,
+    "transactions": [
+      {
+        "sender_address": "a6840a4bcfa5d295ba4bd8df9e8d8422",
+        "recipient_address": "bed50640b82b2bc5274000db58e04ad3",
+        "amount": 1.2150725207374664,
+        "fee": 0.001,
+        "timestamp": 1748571920.8363185,
+        "tx_id": "sim_tx_1748571920.83632_17660"
+      }
+    ],
+    "nonce": 5995,
+    "difficulty": 4,
+    "miner_address": "bed50640b82b2bc5274000db58e04ad3",
+    "hash": "0000d4907c7ca7db998b32f2e8e71c5a140a87aba34affdf669e3b9084c528c1",
+    "child_hashes": []
+  }
+}

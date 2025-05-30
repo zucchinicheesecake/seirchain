@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the path to the Python executable in the virtual environment
-PYTHON_ENV="/home/amy/seirchain/venv/bin/python"
+PYTHON_ENV="/usr/bin/python3"
 
 # Define the module path for the main simulation script
 # IMPORTANT: Use the module path 'seirchain.simulate' with -m

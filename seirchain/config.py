@@ -1,69 +1,37 @@
-# seirchain/config.py
-import json
 import os
 
 class Config:
-    """
-    Manages the simulation's configuration.
-    Implemented as a Singleton to ensure all parts of the application
-    use the same configuration.
-    """
-    _instance = None
-    _initialized = False
-
-    def __new__(cls, *args, **kwargs):
-        if cls._instance is None:
-            cls._instance = super(Config, cls).__new__(cls)
-        return cls._instance
-
     def __init__(self):
-        if not self._initialized:
-            self.DIFFICULTY = 4 # Default mining difficulty (number of leading zeros)
-            self.MAX_DEPTH = 8 # Maximum depth of the Triad Matrix
-            self.MINING_REWARD = 10.0 # Reward for mining a Triad
-            self.TRANSACTION_FEE = 0.05 # Fee per transaction
-            self.MAX_TRANSACTIONS_TO_SIMULATE = 20 # Default number of transactions for simulation
-            # Note: More config parameters can be added here as needed (e.g., node count, etc.)
+        # Base directory for data files (ledger, wallets)
+        # Assumes 'data' directory is sibling to 'seirchain' directory
+        self.data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'data')
+        os.makedirs(self.data_dir, exist_ok=True) # Ensure data directory exists
 
-            self._initialized = True
+        # --- Blockchain Core Settings ---
+        self.DIFFICULTY = 4  # Number of leading zeros required for a valid hash
+        self.MINING_REWARD = 50.0  # Reward for mining a triad
+        self.MAX_NONCE_ATTEMPTS = 1_000_000  # Max attempts for Proof-of-Work (adjust for desired speed)
+        self.MAX_TRANSACTIONS_PER_TRIAD = 100 # Max transactions a triad can hold
 
-    @classmethod
-    def instance(cls):
-        """Returns the singleton instance of Config."""
-        if cls._instance is None:
-            cls() # This calls __init__
-        return cls._instance
+        # Maximum depth of the ledger. Beyond this, older triads might be pruned
+        # or require more complex consensus mechanisms.
+        self.MAX_DEPTH = 1000 
 
-    def load_config(self, network="mainnet"):
-        """
-        Loads configuration from a JSON file based on the network name.
-        Allows overriding default values.
-        """
-        config_file = f"config_{network}.json"
-        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', config_file)
+        # Transaction Fee
+        self.TRANSACTION_FEE = 0.001
 
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                config_data = json.load(f)
-                
-                # Update instance attributes with values from the config file
-                self.DIFFICULTY = config_data.get('DIFFICULTY', self.DIFFICULTY)
-                self.MAX_DEPTH = config_data.get('MAX_DEPTH', self.MAX_DEPTH)
-                self.MINING_REWARD = config_data.get('MINING_REWARD', self.MINING_REWARD)
-                self.TRANSACTION_FEE = config_data.get('TRANSACTION_FEE', self.TRANSACTION_FEE)
-                self.MAX_TRANSACTIONS_TO_SIMULATE = config_data.get('MAX_TRANSACTIONS_TO_SIMULATE', self.MAX_TRANSACTIONS_TO_SIMULATE)
+        # Max children a triad can have (should be consistent with Triad.MAX_CHILD_CAPACITY)
+        self.MAX_CHILD_CAPACITY = 3 
 
-                print(f"Configuration loaded from {config_file}.")
-        else:
-            print(f"Warning: Config file '{config_file}' not found. Using default configurations.")
+        # --- P2P Network Settings (placeholder for future implementation) ---
+        self.P2P_PORT = 8000 # Default port for the P2P node
+        self.BOOTSTRAP_NODES = ["127.0.0.1:8001"] # Example: connect to a node on port 8001 initially
+        self.PEER_DISCOVERY_INTERVAL = 5 # How often to try connecting to bootstrap nodes (seconds)
 
-    def to_dict(self):
-        """Returns the current configuration as a dictionary."""
-        return {
-            "DIFFICULTY": self.DIFFICULTY,
-            "MAX_DEPTH": self.MAX_DEPTH,
-            "MINING_REWARD": self.MINING_REWARD,
-            "TRANSACTION_FEE": self.TRANSACTION_FEE,
-            "MAX_TRANSACTIONS_TO_SIMULATE": self.MAX_TRANSACTIONS_TO_SIMULATE
-        }
+        # --- Simulation/Visualizer Settings ---
+        self.VISUALIZER_ANIMATION_INTERVAL = 0.08 # How often the visualizer updates (seconds)
+        self.DUMMY_TRANSACTION_CHANCE = 0.3 # Probability of adding a dummy transaction per mining loop iteration
 
+
+# Instantiate the Config class so it can be imported by other modules
+config = Config()

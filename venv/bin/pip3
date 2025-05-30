@@ -1,4 +1,4 @@
-#!/home/amy/seirchain/venv/bin/python3.10
+#!/home/amy/projects/seirchain/venv/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys

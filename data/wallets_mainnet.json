@@ -1,0 +1,14 @@
+{
+  "bed50640b82b2bc5274000db58e04ad3": {
+    "name": "GENESIS_MINE_WALLET",
+    "balance": 0.0
+  },
+  "6c976961e3232e308f7cf8ca19e73df4": {
+    "name": "SimWallet_A",
+    "balance": 1000.0
+  },
+  "a6840a4bcfa5d295ba4bd8df9e8d8422": {
+    "name": "SimWallet_B",
+    "balance": 500.0
+  }
+}
