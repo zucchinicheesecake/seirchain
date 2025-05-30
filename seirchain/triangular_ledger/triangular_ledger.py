@@ -2,10 +2,22 @@ import json
 import os
 import hashlib
 import time
+import uuid
 from collections import deque
-from seirchain.data_types.triad import Triad, TriadEncoder
+from seirchain.data_types.triad import Triad
 from seirchain.data_types.transaction import TransactionNode, Transaction
-from seirchain.config import Config # Import the Config class
+from seirchain.config import config
+
+class TriadEncoder(json.JSONEncoder):
+    """
+    Custom JSONEncoder to serialize Triad, TransactionNode, and Transaction objects.
+    """
+    def default(self, obj):
+        if isinstance(obj, Triad):
+            return obj.to_dict()
+        elif hasattr(obj, 'to_dict') and callable(getattr(obj, 'to_dict')):
+            return obj.to_dict()
+        return json.JSONEncoder.default(self, obj)
 
 class TriangularLedger:
     """
@@ -13,16 +25,27 @@ class TriangularLedger:
     It's designed to hold a genesis triad and subsequent triads,
     maintaining a tree-like structure.
     """
-
     def __init__(self, max_depth, genesis_triad=None):
         self.max_depth = max_depth
         self.genesis_triad = genesis_triad
-        self.difficulty = Config.instance().DIFFICULTY # Access current difficulty from Config
+        self.difficulty = config.DIFFICULTY
+        self._triad_map = {} # New: Stores all triads by their hash for quick lookup
 
         if self.genesis_triad:
+            # If genesis provided, populate map recursively
+            self._populate_triad_map(self.genesis_triad)
             print("Ledger initialized with existing Genesis Triad.")
         else:
             print("Ledger initialized without a Genesis Triad. Please run genesis generation.")
+
+    def _populate_triad_map(self, triad):
+        """Helper to add a triad and its children to the _triad_map recursively."""
+        if triad.hash not in self._triad_map:
+            self._triad_map[triad.hash] = triad
+            for child_hash in triad.child_hashes:
+                # In a fully formed ledger, child_hash should exist as a key or be added later
+                # For now, this is a helper to ensure loaded triads are mapped
+                pass # Children will be mapped when they are processed by _reconstruct_triad or add_triad
 
     def add_triad(self, new_triad):
         """
@@ -31,35 +54,38 @@ class TriangularLedger:
         """
         if not self.genesis_triad:
             self.genesis_triad = new_triad
-            print(f"Genesis Triad set: {new_triad.triad_hash}")
+            self._triad_map[new_triad.hash] = new_triad # Add genesis to map
+            print(f"Genesis Triad set: {new_triad.hash}")
             return True
 
-        # Find where to attach the new triad based on its parent hashes
-        # This assumes new_triad.parent_hashes correctly points to existing tips
+        # Add new triad to map immediately
+        self._triad_map[new_triad.hash] = new_triad
+
         found_parent = False
-        for current_tip_hash in self.get_current_tip_triad_hashes():
-            if current_tip_hash in new_triad.parent_hashes: # This is a direct parent
-                parent_triad = self._find_triad_by_hash(current_tip_hash)
-                if parent_triad:
-                    parent_triad.add_child(new_triad)
-                    found_parent = True
-                    # print(f"Triad {new_triad.triad_hash} added as child of {current_tip_hash}")
-                    break # Assuming one direct parent in current tips for simplicity
-        
-        # If not directly attached to a tip, it might be orphaned or needs more complex attachment logic
+        # Iterate through potential parent hashes of the new triad
+        for parent_hash_of_new_triad in new_triad.parent_hashes:
+            # Retrieve the parent triad object from the map
+            parent_triad = self._triad_map.get(parent_hash_of_new_triad)
+            if parent_triad:
+                parent_triad.add_child(new_triad) # Link child to parent
+                found_parent = True
+                # In a triangular ledger, a triad might have multiple parents.
+                # For simplicity, we'll assume linking to one parent is sufficient for validation here.
+                # If you want to enforce multiple parents, adjust this logic.
+                break # Assuming one parent link is enough for now
+
         if not found_parent:
-            # This is a critical point for chain forks or orphaned triads.
-            # For simplicity in initial implementation, we might print a warning.
-            # print(f"Warning: Triad {new_triad.triad_hash} not directly attached to current tips. Possibly an orphaned triad or a fork.")
-            pass # Handle more robustly later if forks are explicitly supported
+            # This could mean the new triad has no valid parent in the current ledger,
+            # which might indicate a fork or an issue.
+            pass # Or raise an error, or log a warning
 
         return found_parent
-
 
     def get_current_tip_triad_hashes(self):
         """
         Returns a list of hashes of the current 'tip' triads in the ledger.
         These are triads that have no children, representing the latest points for new mining.
+        Uses the _triad_map for efficient traversal.
         """
         if not self.genesis_triad:
             return []
@@ -70,95 +96,64 @@ class TriangularLedger:
 
         while q:
             current_triad = q.popleft()
-            if current_triad.triad_hash in visited:
+            if current_triad.hash in visited:
                 continue
-            visited.add(current_triad.triad_hash)
+            visited.add(current_triad.hash)
 
-            if not current_triad.children:
-                tips.append(current_triad.triad_hash)
+            if not current_triad.child_hashes:
+                tips.append(current_triad.hash)
             else:
-                for child in current_triad.children:
-                    q.append(child)
-        
-        return tips if tips else [self.genesis_triad.triad_hash] # If no children anywhere, genesis is the only tip
+                for child_hash in current_triad.child_hashes:
+                    child_triad = self._triad_map.get(child_hash) # Get child from map
+                    if child_triad and child_triad.hash not in visited:
+                        q.append(child_triad)
+        return tips if tips else [self.genesis_triad.hash]
 
     def get_total_triads(self):
         """
-        Counts the total number of triads in the ledger by traversing the structure.
+        Counts the total number of triads in the ledger using the _triad_map size.
+        Much more efficient than traversal.
         """
-        if not self.genesis_triad:
-            return 0
-
-        count = 0
-        q = deque([self.genesis_triad])
-        visited = set()
-
-        while q:
-            current_triad = q.popleft()
-            if current_triad.triad_hash in visited:
-                continue
-            visited.add(current_triad.triad_hash)
-            count += 1
-
-            for child in current_triad.children:
-                q.append(child)
-        return count
+        return len(self._triad_map)
 
     def get_all_transactions(self):
         """
         Generator that yields all individual Transaction objects from all Triads in the ledger.
+        Uses the _triad_map for efficient traversal.
         """
         if not self.genesis_triad:
             return
-
         q = deque([self.genesis_triad])
         visited = set()
-
         while q:
             current_triad = q.popleft()
-            if current_triad.triad_hash in visited:
+            if current_triad.hash in visited:
                 continue
-            visited.add(current_triad.triad_hash)
-
+            visited.add(current_triad.hash)
             for txn_node in current_triad.transactions:
-                yield txn_node.transaction # Yield the actual Transaction object
-
-            for child in current_triad.children:
-                q.append(child)
+                yield txn_node.transaction
+            for child_hash in current_triad.child_hashes:
+                child_triad = self._triad_map.get(child_hash) # Get child from map
+                if child_triad and child_triad.hash not in visited:
+                    q.append(child_triad)
 
     def _find_triad_by_hash(self, target_hash):
         """
-        Helper method to find a triad by its hash by traversing the ledger.
+        Helper method to find a triad by its hash.
+        Now uses the _triad_map for direct O(1) lookup.
         """
-        if not self.genesis_triad:
-            return None
-
-        q = deque([self.genesis_triad])
-        visited = set()
-
-        while q:
-            current_triad = q.popleft()
-            if current_triad.triad_hash in visited:
-                continue
-            visited.add(current_triad.triad_hash)
-
-            if current_triad.triad_hash == target_hash:
-                return current_triad
-
-            for child in current_triad.children:
-                q.append(child)
-        return None
+        return self._triad_map.get(target_hash)
 
     def save_to_json(self, filename):
         """Saves the entire ledger (starting from genesis triad) to a JSON file."""
         if not self.genesis_triad:
             print("No genesis triad to save.")
             return
-
         try:
             with open(filename, 'w') as f:
-                json.dump(self.genesis_triad, f, indent=2, cls=TriadEncoder)
-            # print(f"Ledger saved to {filename}")
+                # Corrected to wrap the genesis_triad data under a "root" key
+                # Only serialize the genesis triad and let TriadEncoder handle recursion through children
+                json.dump({"root": self.genesis_triad}, f, indent=2, cls=TriadEncoder)
         except Exception as e:
             print(f"Error saving ledger to {filename}: {e}")
 
@@ -167,53 +162,70 @@ class TriangularLedger:
         """Loads the entire ledger from a JSON file."""
         if not os.path.exists(filename):
             raise FileNotFoundError(f"Ledger file not found: {filename}")
-
         with open(filename, 'r') as f:
             data = json.load(f)
-        
-        # Recursively build Triad objects from the loaded data
-        genesis_triad = cls._reconstruct_triad(data.get('root'))
-        
-        # Initialize ledger with max_depth from Config, as it's not stored in JSON
-        config_instance = Config.instance()
-        return cls(config_instance.MAX_DEPTH, genesis_triad)
+
+        root_triad_data = data.get('root')
+        if not root_triad_data:
+            raise ValueError(f"Invalid ledger JSON format in {filename}: 'root' key not found.")
+
+        # Pass a temporary map to _reconstruct_triad to build up all triads
+        temp_triad_map = {}
+        genesis_triad = cls._reconstruct_triad(root_triad_data, temp_triad_map)
+
+        # Create ledger instance and explicitly set its _triad_map
+        ledger_instance = cls(config.MAX_DEPTH, genesis_triad)
+        ledger_instance._triad_map = temp_triad_map # Set the populated map
+
+        return ledger_instance
 
     @staticmethod
-    def _reconstruct_triad(triad_data):
-        """Helper to recursively reconstruct Triad objects from JSON data."""
+    def _reconstruct_triad(triad_data, triad_map_ref):
+        """
+        Helper to recursively reconstruct Triad objects from JSON data
+        and populate a shared triad_map_ref.
+        """
         if triad_data is None:
             return None
-        
-        # Reconstruct TransactionNodes (which contain Transactions)
+
+        # Avoid reconstructing if already in map (for cycles/efficiency)
+        existing_triad = triad_map_ref.get(triad_data.get('triangle_id'))
+        if existing_triad:
+            return existing_triad
+
         transactions = [
             TransactionNode(
                 transaction=Transaction(
-                    sender=tn_data['transaction_data']['from_addr'],
-                    receiver=tn_data['transaction_data']['to_addr'],
+                    sender=tn_data['transaction_data']['sender'],
+                    receiver=tn_data['transaction_data']['receiver'],
                     amount=tn_data['transaction_data']['amount'],
                     fee=tn_data['transaction_data']['fee'],
                     timestamp=tn_data['transaction_data']['timestamp'],
                     signature=tn_data['transaction_data'].get('signature')
                 ),
-                parent_hash=tn_data.get('parent_hash') # TransactionNode might have its own parent_hash
+                parent_hash=tn_data.get('parent_hash')
             )
             for tn_data in triad_data['transactions']
         ]
 
         triad = Triad(
-            parent_hashes=[], # Genesis Triad has no parent hashes
-            difficulty=Config.instance().DIFFICULTY,
+            triad_id=triad_data.get('triad_id', str(uuid.uuid4())),
+            depth=triad_data.get('depth', 0),
+            parent_hashes=triad_data.get('parent_hashes', []),
+            difficulty=config.DIFFICULTY,
             transactions=transactions,
             nonce=triad_data['nonce'],
             timestamp=triad_data['timestamp'],
-            triad_hash=triad_data['triangle_id'] # Reconstruct hash for existing triads
+            current_hash=triad_data['triangle_id'],
+            miner_address=triad_data['mined_by']
         )
 
-        # Reconstruct children recursively
-        for child_data in triad_data['children']:
-            child_triad = TriangularLedger._reconstruct_triad(child_data)
-            if child_triad:
-                triad.add_child(child_triad) # Add child to the reconstructed parent
+        triad_map_ref[triad.hash] = triad # Add to the map immediately
 
+        # Recursively reconstruct children and link them
+        for child_data in triad_data.get('children', []):
+            child_triad = TriangularLedger._reconstruct_triad(child_data, triad_map_ref)
+            if child_triad:
+                triad.add_child(child_triad)
         return triad
 

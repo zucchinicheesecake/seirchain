@@ -1,226 +1,204 @@
-# seirchain/simulate.py
-import sys
-import os
+import argparse
 import time
+import os
+import sys
+from datetime import datetime, timedelta
 import random
-import json
-import traceback
-import uuid
+import hashlib
 
-# Ensure the seirchain package is in the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# Adjust path to allow imports from seirchain
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, project_root)
 
-from seirchain.data_types.wallets import Wallets
-from seirchain.data_types.triangular_ledger import TriangularLedger
-from seirchain.data_types.triad import Triad
-from seirchain.data_types.transaction_node import TransactionNode
+from seirchain.triangular_ledger.triangular_ledger import TriangularLedger
+from seirchain.data_types.wallets import wallets as main_wallets_manager
+from seirchain.data_types.transaction import Transaction, TransactionNode
 from seirchain.miner import Miner
-from seirchain.config import Config
+from seirchain.config import config
 
-# --- Configuration ---
-config = Config.instance()
-wallets = Wallets.instance()
-ledger = TriangularLedger.instance()
 
-# --- Simulation Functions ---
+def generate_random_transactions(num_transactions, current_ledger, wallets_manager):
+    """Generates random transactions between existing wallets using the central wallets manager."""
+    transactions = []
 
-def generate_random_transaction_params():
-    """Generates random sender, receiver, and amount for a transaction using actual wallet IDs."""
-    all_wallet_ids = wallets.get_all_wallet_ids()
-    
-    if len(all_wallet_ids) < 2:
-        return None, None, None
+    # Get actual wallet IDs from the manager
+    wallet_ids = list(wallets_manager.wallets.keys())
 
-    sender_wallet_id = random.choice(all_wallet_ids)
-    receiver_wallet_id = random.choice(all_wallet_ids)
+    if len(wallet_ids) < 2:
+        return []
 
-    while sender_wallet_id == receiver_wallet_id:
-        receiver_wallet_id = random.choice(all_wallet_ids)
+    for _ in range(num_transactions):
+        sender_id = random.choice(wallet_ids)
+        receiver_id = random.choice([wid for wid in wallet_ids if wid != sender_id])
 
-    amount = round(random.uniform(1.0, 500.0), 2)
-    return sender_wallet_id, receiver_wallet_id, amount
+        sender_balance = wallets_manager.get_balance(sender_id)
 
-def run_parallel_mining_simulation(num_transactions_to_simulate, network_name):
-    """
-    Orchestrates the parallel mining simulation for the Triad Matrix.
-    This simulates multiple miners choosing Triads to extend concurrently.
-    Now specifically implements multi-parent selection.
-    """
-    print("Initializing SeirChain Triad Matrix simulation...")
-    print(f"Configuration for network: {network_name}")
-    print(f"  Difficulty: {config.DIFFICULTY}")
-    print(f"  Max Depth: {config.MAX_DEPTH}")
-    print(f"  Mining Reward: {config.MINING_REWARD}")
-    print(f"  Transaction Fee: {config.TRANSACTION_FEE}")
-    print(f"=== SeirChain Triad Matrix Simulation ===")
-    print(f"Network: {network_name}")
-    print(f"Implementing Sierpinski Triangle-based fractal ledger with multi-parent linking")
-    print(f"Target transactions: {num_transactions_to_simulate}")
+        if sender_balance > 0:
+            amount = random.uniform(1, sender_balance * 0.1)
+            fee = amount * 0.001
+            total_amount = amount + fee
 
-    miner_address = wallets.get_wallet_id_by_name("GENESIS_MINE_WALLET")
-    if miner_address is None:
-        print("Error: 'GENESIS_MINE_WALLET' not found. Ensure wallets are properly initialized.")
-        return False
-        
-    miner = Miner.instance(miner_address, network_name)
+            if sender_balance >= total_amount:
+                # Use the manager's transfer method
+                if wallets_manager.transfer_funds(sender_id, receiver_id, amount, fee):
+                    tx = Transaction(
+                        sender=sender_id,
+                        receiver=receiver_id,
+                        amount=amount,
+                        fee=fee,
+                        timestamp=time.time(),
+                        signature="simulated_sig"
+                    )
+                    transactions.append(TransactionNode(tx))
+    return transactions
 
-    start_time = time.time()
-    
-    transaction_pool = []
-    transactions_generated = 0
-    transactions_processed_count = 0
+def run_simulation(network_name):
+    print(f"Running simulation for the {network_name} network...")
 
-    # Ensure Genesis Triad exists before starting
-    if not ledger.triads:
-        print("Ledger is empty, initializing Genesis Triad...")
-        ledger._initialize_genesis_triad()
-        ledger.save_ledger(network_name)
+    ledger_filename = f"ledger_{network_name}.json"
+    wallets_filename = f"wallets_{network_name}.json"
 
-    print("\n--- Generating Transactions ---")
-    while transactions_generated < num_transactions_to_simulate:
-        sender, receiver, amount = generate_random_transaction_params()
-        if sender is None:
-            break
+    current_ledger = None # Initialize as None
 
-        fee = config.TRANSACTION_FEE
-        transaction = TransactionNode(sender_address=sender, receiver_address=receiver, amount=amount, fee=fee)
-        
-        # Simulate signing the transaction with a simplified private key (sender's address for simplicity)
-        transaction.sign(sender) 
+    # Try to load existing ledger
+    if os.path.exists(ledger_filename):
+        try:
+            current_ledger = TriangularLedger.load_from_json(ledger_filename)
+            print(f"Ledger loaded successfully from {ledger_filename}")
 
-        # In a real system, verification would happen at the peer level before entering mempool.
-        # For this simulation, we'll verify it here as it's added to the pool.
-        # This uses the sender's address as a pseudo public key for verification
-        if not transaction.verify_signature(sender): 
-            print(f"  Transaction {transaction.hash[:8]}... from {sender[:6]}... failed signature verification. Skipping.")
-            continue # Skip invalid transactions
-        
-        if wallets.transfer_funds(sender, receiver, amount, fee):
-            transaction_pool.append(transaction)
-            transactions_generated += 1
-        else:
-            break
-
-    print(f"\n--- Starting Mining Cycles ---")
-    print(f"Total transactions generated: {transactions_generated}. Now mining them into Triads.")
-
-    mining_cycle = 0
-    while transaction_pool and ledger.get_max_current_depth() < config.MAX_DEPTH:
-        mining_cycle += 1
-        print(f"\n--- Mining Cycle {mining_cycle} ---")
-        
-        candidate_parents_list = ledger.get_candidate_parents()
-        if not candidate_parents_list:
-            print("No suitable parent Triads found to extend. Halting mining.")
-            break
-
-        selected_parent_hashes = []
-        num_parents_to_select = random.randint(1, min(3, len(candidate_parents_list)))
-        
-        random.shuffle(candidate_parents_list) 
-        
-        for i in range(num_parents_to_select):
-            if i < len(candidate_parents_list):
-                selected_parent_hashes.append(candidate_parents_list[i].hash)
-        
-        if not selected_parent_hashes:
-            print("Could not select any parents for new Triad. Halting mining.")
-            break
-
-        max_parent_depth = 0
-        for p_hash in selected_parent_hashes:
-            parent_triad = ledger.get_triad(p_hash)
-            if parent_triad:
-                max_parent_depth = max(max_parent_depth, parent_triad.depth)
-        new_depth = max_parent_depth + 1
-
-        if new_depth > config.MAX_DEPTH:
-            print(f"Cannot mine new Triad: Max Depth ({config.MAX_DEPTH}) reached or exceeded. Halting mining.")
-            break
-            
-        batch_size = min(random.randint(1, 5), len(transaction_pool))
-        transactions_for_triad = [transaction_pool.pop(0) for _ in range(batch_size)]
-
-        if not transactions_for_triad:
-            print("Transaction pool is empty. Stopping mining.")
-            break
-
-        new_triad_id = str(uuid.uuid4())
-
-        print(f"Miner {miner.miner_address[:8]}... attempting to mine new Triad {new_triad_id[:8]}...")
-        print(f"  Selected Parent Hashes ({len(selected_parent_hashes)}): {[h[:8] + '...' for h in selected_parent_hashes]}")
-        print(f"  New Triad Depth: {new_depth}")
-        print(f"  Transactions in Triad: {len(transactions_for_triad)}")
-
-        mined_triad = miner.mine_triad(
-            triad_id=new_triad_id,
-            depth=new_depth,
-            parent_hashes=selected_parent_hashes,
-            transactions=transactions_for_triad,
-            network_name=network_name
-        )
-
-        if mined_triad:
-            if ledger.add_triad(mined_triad):
-                transactions_processed_count += len(mined_triad.transactions)
-                print(f"  Successfully added Triad {mined_triad.triad_id[:8]}... to ledger. Total Triads: {len(ledger.triads)}")
-                print(f"  Transactions processed so far: {transactions_processed_count}")
+            # Load wallets state from file, or initialize if not found
+            if main_wallets_manager.load_wallets(network_name):
+                print(f"Wallets loaded successfully from {wallets_filename}")
             else:
-                print(f"  Failed to add Triad {mined_triad.triad_id[:8]}... to ledger. Transactions returned to pool.")
-                transaction_pool.extend(transactions_for_triad)
-        else:
-            print(f"  Mining attempt for Triad {new_triad_id[:8]}... failed. Transactions returned to pool.")
-            transaction_pool.extend(transactions_for_triad)
+                print(f"Wallets file '{wallets_filename}' not found or invalid. Initializing empty wallets within manager.")
 
-        time.sleep(0.1)
+            # Reconstruct wallet balances from transactions in the loaded ledger
+            print("Reconstructing wallet states from loaded ledger...")
+            all_transactions = list(current_ledger.get_all_transactions()) # Convert generator to list
+            for tx in all_transactions:
+                # Ensure wallets exist in the manager before modifying balances
+                # Using get_wallet_id_by_name and add_wallet to handle potential new addresses from loaded tx
+                if not main_wallets_manager.get_wallet_id_by_name(tx.sender) and tx.sender != "0x0":
+                     main_wallets_manager.add_wallet(tx.sender, 0)
+                if not main_wallets_manager.get_wallet_id_by_name(tx.receiver):
+                     main_wallets_manager.add_wallet(tx.receiver, 0)
 
-    end_time = time.time()
-    print("\n--- Simulation Summary ---")
-    print(f"Simulation finished. Total transactions processed: {transactions_processed_count} out of {transactions_generated} generated.")
-    print(f"Remaining transactions in pool: {len(transaction_pool)}")
-    print(f"Time taken: {end_time - start_time:.2f} seconds")
+                # Update balances based on transaction history
+                sender_id = main_wallets_manager.get_wallet_id_by_name(tx.sender) if tx.sender != "0x0" else None
+                receiver_id = main_wallets_manager.get_wallet_id_by_name(tx.receiver)
 
-    wallets.save_wallets(network_name)
-    ledger.save_ledger(network_name)
-    print(f"Wallets and Ledger saved for {network_name}.")
+                if tx.sender == "0x0": # Coinbase transaction (mining reward)
+                    if receiver_id:
+                        main_wallets_manager.add_funds(receiver_id, tx.amount)
+                else:
+                    if sender_id and receiver_id:
+                        main_wallets_manager.deduct_funds(sender_id, tx.amount + tx.fee) # Deduct from sender
+                        main_wallets_manager.add_funds(receiver_id, tx.amount) # Add to receiver
+            print(f"Reconstructed {len(main_wallets_manager.wallets)} wallet states within the manager.")
 
-    print_final_status()
-    return True
+        except Exception as e:
+            print(f"Error loading ledger from {ledger_filename}: {e}")
+            print(f"Simulation failed for {network_name} network. Exiting.")
+            return
 
-def print_final_status():
-    """Prints the final state of wallets and the ledger."""
-    print("\n--- Final Wallet Balances (Top 5) ---")
-    wallets.print_balances()
+    # If no ledger was loaded (first run or error during load), we initialize a new one.
+    if not current_ledger:
+        print("No existing ledger found. Initializing new network...")
+        current_ledger = TriangularLedger(config.MAX_DEPTH) # Initialize an empty ledger instance
 
-    print("\n--- Ledger Overview ---")
-    ledger.print_ledger_status()
+        # Initialize wallets directly using the manager
+        for _ in range(config.NUM_SIMULATED_WALLETS):
+            main_wallets_manager.add_wallet(f"SimulatedWallet_{main_wallets_manager.generate_wallet_id()[:6]}", initial_balance=0)
+        print(f"Created {len(main_wallets_manager.wallets)} initial wallets via manager.")
+
+        # Ensure the genesis miner address exists as a wallet in the manager
+        miner_address = config.GENESIS_MINER_ADDRESS_testnet if network_name == "testnet" else "SIMULATED_MINER"
+        if not main_wallets_manager.get_wallet_id_by_name(miner_address):
+            main_wallets_manager.add_wallet(miner_address, initial_balance=0)
+
+        # For the first run, let's distribute some initial funds to random wallets
+        print("Distributing initial funds to some wallets for starting transactions...")
+        initial_distribution_targets = [wid for wid in main_wallets_manager.wallets.keys() if main_wallets_manager.wallets[wid].get('name') != miner_address]
+        if initial_distribution_targets:
+            num_targets = min(len(initial_distribution_targets), 5) # Distribute to max 5 wallets
+            for _ in range(num_targets):
+                target_id = random.choice(initial_distribution_targets)
+                main_wallets_manager.add_funds(target_id, config.INITIAL_DISTRIBUTION_AMOUNT / num_targets)
+                print(f"  {config.INITIAL_DISTRIBUTION_AMOUNT / num_targets:.2f} to {main_wallets_manager.wallets[target_id].get('name') or target_id[:8]}...")
+
+        # Ensure the genesis miner address has a wallet created for it.
+        miner_wallet_id = main_wallets_manager.get_wallet_id_by_name(miner_address)
+        if not miner_wallet_id:
+            miner_wallet_id = main_wallets_manager.add_wallet(miner_address, initial_balance=0)
 
 
-# --- Main Execution ---
-if __name__ == "__main__":
-    import argparse
+    # Determine the miner's address for this simulation run
+    miner_address = config.GENESIS_MINER_ADDRESS_testnet if network_name == "testnet" else "SIMULATED_MINER"
+    miner_wallet_id = main_wallets_manager.get_wallet_id_by_name(miner_address) # Get ID if not already found
 
-    parser = argparse.ArgumentParser(description="Run the SeirChain simulation.")
-    parser.add_argument("network", type=str, help="The network to simulate (e.g., 'mainnet', 'testnet').")
-    parser.add_argument("--transactions", type=int, default=config.MAX_TRANSACTIONS_TO_SIMULATE,
-                        help=f"Number of transactions to simulate. Default is {config.MAX_TRANSACTIONS_TO_SIMULATE}.")
 
-    args = parser.parse_args()
+    # Initialize Miner instance - current_ledger is now guaranteed to be a TriangularLedger object
+    miner_instance = Miner(current_ledger, main_wallets_manager)
 
-    config.load_config(args.network)
-    wallets.load_wallets(args.network)
-    ledger.load_ledger(args.network, config.MAX_DEPTH)
+    # Simulation loop parameters
+    simulation_duration = timedelta(minutes=config.SIMULATION_DURATION_MINUTES)
+    end_time = datetime.now() + simulation_duration
+
+    print(f"\nSimulation will run for {config.SIMULATION_DURATION_MINUTES} minutes.")
+    print(f"Miner Address: {miner_address} (ID: {miner_wallet_id})")
 
     try:
-        success = run_parallel_mining_simulation(args.transactions, args.network)
-        if success:
-            print(f"\nSimulation completed successfully for {args.network} network.")
-        else:
-            print(f"\nSimulation failed for {args.network} network.")
-            sys.exit(1)
+        while datetime.now() < end_time:
+            # Generate and add transactions to the miner's pool
+            new_transactions = generate_random_transactions(
+                config.TRANSACTIONS_PER_ITERATION, current_ledger, main_wallets_manager
+            )
+            for tx_node in new_transactions:
+                miner_instance.add_transaction_to_pool(tx_node)
+
+            # Miner attempts to mine
+            mined_triad = miner_instance.mine_next_triad(miner_address)
+
+            # Check for mining statistics and log progress
+            if mined_triad:
+                stats = miner_instance.get_mining_stats()
+                print(f"Time: {datetime.now().strftime('%H:%M:%S')} | "
+                      f"Triads: {current_ledger.get_total_triads()} | " # current_ledger is now guaranteed to be object
+                      f"Depth: {mined_triad.depth} | "
+                      f"Hashrate: {stats['hashrate']:.2f} H/s | " # Formatted for better display
+                      f"Miner Balance: {main_wallets_manager.get_balance(miner_wallet_id):.2f}")
+
+            # Optional: Save ledger periodically
+            if current_ledger and current_ledger.genesis_triad and config.SAVE_LEDGER_PERIODICALLY and \
+               (datetime.now().timestamp() - current_ledger.genesis_triad.timestamp) % config.SAVE_INTERVAL_SECONDS < config.SIMULATION_LOOP_INTERVAL: # Check relative time
+                 current_ledger.save_to_json(ledger_filename)
+                 main_wallets_manager.save_wallets(network_name)
+
+
+            time.sleep(config.SIMULATION_LOOP_INTERVAL)
+    except KeyboardInterrupt:
+        print("\nSimulation interrupted by user.")
     except Exception as e:
-        print(f"\nSimulation failed for {args.network} network. Exiting.")
-        print("Traceback (most recent call last):")
-        traceback.print_exc()
-        sys.exit(1)
+        print(f"\nAn unexpected error occurred during simulation: {e}")
+    finally:
+        # Final save of the ledger and wallets state
+        print("\nSimulation finished. Saving final ledger state...")
+        if current_ledger and current_ledger.genesis_triad: # Only save if a genesis triad exists
+            current_ledger.save_to_json(ledger_filename)
+            print(f"Final ledger saved to {ledger_filename}")
+            print(f"Total Triads in ledger: {current_ledger.get_total_triads()}")
+        else:
+            print("No ledger to save.")
+
+        print("\nSaving final wallets state...")
+        main_wallets_manager.save_wallets(network_name)
+        print(f"Final wallets saved to {wallets_filename}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Run the SeirChain simulation.")
+    parser.add_argument("network", choices=["testnet", "mainnet"], help="Specify the network to simulate (testnet or mainnet).")
+    args = parser.parse_args()
+
+    run_simulation(args.network)
 

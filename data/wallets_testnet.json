@@ -1,0 +1,62 @@
+{
+  "b5034cefbbcf8b16f8e3180111d499f5": {
+    "name": "SimulatedWallet_d3c91a",
+    "balance": 69.11348553918208
+  },
+  "7a9ae57ff1436711ee6f832bf597eb18": {
+    "name": "SimulatedWallet_52997e",
+    "balance": 30.501133207124376
+  },
+  "eae956b940740f70e5329f90f16495dd": {
+    "name": "SimulatedWallet_4bb6bc",
+    "balance": 386.0529231486325
+  },
+  "b53476147cbdefe3a84925f9854b70a4": {
+    "name": "SimulatedWallet_63ffb7",
+    "balance": 26.98384769586356
+  },
+  "f719b25c87512bb01d287e60b8df4bdb": {
+    "name": "SimulatedWallet_80a660",
+    "balance": 44.0745031090365
+  },
+  "76c1f33b7e319ec30964ec1d869ba55a": {
+    "name": "SimulatedWallet_95a84a",
+    "balance": 99.77224558819928
+  },
+  "131826a91822c3b426516226b1929ce0": {
+    "name": "SimulatedWallet_65aa2a",
+    "balance": 33.360766657571624
+  },
+  "6244c8aa95d37f1cb3b313f0054757e6": {
+    "name": "SimulatedWallet_114bb7",
+    "balance": 133.58113554614243
+  },
+  "642762a5cd055d1661d3781bd4b2500b": {
+    "name": "SimulatedWallet_b05c53",
+    "balance": 152.61252132847142
+  },
+  "774ca976069030c7fc777f0f35ab3573": {
+    "name": "SimulatedWallet_9e585e",
+    "balance": 32.727932974884894
+  },
+  "b2a1488b4cd236c97f661aba1c7ffd0b": {
+    "name": "testnet_genesis_miner_0x123abc",
+    "balance": 920.1712575311116
+  },
+  "6f7e0ec7abd0c3b313f272731b24d009": {
+    "name": "20f1437c73ef323b6b4cb968fbeddb5a",
+    "balance": 50.387098563533975
+  },
+  "4d1b65fd79e737de0d57b8e8bb28cdee": {
+    "name": "796207f5a72e00b35ca955531805fc7d",
+    "balance": 20.043566951258743
+  },
+  "e20c7beac3714c75fa7a85d4a40c63ce": {
+    "name": "c6b94026918147817393009148db7083",
+    "balance": 1.9602743410044572
+  },
+  "4ef2db4885e9c64f98aab208a94828ad": {
+    "name": "6cac2b0b01542987217c22212dd2b9cc",
+    "balance": 105.07412758442337
+  }
+}

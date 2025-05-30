@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the path to the Python executable in the virtual environment
-PYTHON_ENV="/usr/bin/python3"
+PYTHON_ENV="/home/amy/new/seirchain/venv/bin/python"
 
 # Define the module path for the main simulation script
 # IMPORTANT: Use the module path 'seirchain.simulate' with -m
@@ -28,7 +28,6 @@ if [ -n "$1" ]; then # Check if a command-line argument is provided
 fi
 
 # Run the simulation using -m to treat it as a module within the package
-echo "Running simulation for the $NETWORK network..."
 "$PYTHON_ENV" -m "$SIMULATION_MODULE" "$NETWORK" "${@:2}"
 
 if [ $? -eq 0 ]; then
