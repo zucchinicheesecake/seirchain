@@ -1,6 +1,6 @@
 # SeirChain: The Triad Matrix - A Fractal Ledger for Quantum-Resistant Decentralization
 
-## ?? Introduction
+## Introduction
 
 SeirChain is a groundbreaking **Triad Matrix prototype** that re-imagines decentralized ledger technology. It moves beyond traditional linear **chains** by implementing a **fractal ledger** based on the principles of **Sierpinski triangles**. This innovative design aims to address critical challenges in ledger scalability, efficiency, and future-proof its cryptographic foundation against emerging quantum threats.
 
@@ -15,7 +15,7 @@ At its core, SeirChain organizes transactions and **Triads** into a self-similar
 * **Wallet Management:** Basic wallet functionality for address generation and balance tracking.
 * **ASCII Visualization:** Provides a textual visualization of the fractal ledger structure.
 
-## ?? Getting Started
+## Getting Started
 
 Follow these steps to get SeirChain and its Triad Matrix up and running quickly on your local machine.
 
