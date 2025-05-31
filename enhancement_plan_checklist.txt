@@ -1,0 +1,62 @@
+Enhancement Plan Checklist for Sophisticated and Robust Improvements
+
+miner.py:
+- [x] Implement graceful shutdown:
+  - [x] Add a threading.Event to signal shutdown.
+  - [x] Modify mining loops to check this event and exit cleanly.
+- [ ] Thread lifecycle management:
+  - [ ] Track thread states and ensure proper join on stop.
+- [ ] Metrics collection:
+  - [ ] Add counters for hashes computed, successful mines, mining duration.
+  - [ ] Expose metrics via properties or logging.
+- [ ] Nonce search strategy:
+  - [ ] Use randomized nonce start points or partition nonce ranges per thread.
+- [ ] Configuration validation:
+  - [ ] Validate DIFFICULTY, MAX_NONCE_ATTEMPTS, and thread count on startup.
+- [ ] Transaction pool handling:
+  - [ ] Validate transactions before adding to pool.
+  - [ ] Deduplicate transactions in pool.
+
+simulate.py:
+- [ ] Configuration validation:
+  - [ ] Check all config parameters for valid ranges and types.
+- [ ] Modularize:
+  - [ ] Separate wallet initialization, transaction generation, and simulation loop into functions.
+- [ ] Metrics and logging:
+  - [ ] Log transaction rates, wallet balances periodically.
+- [ ] Pause/resume:
+  - [ ] Implement signal handlers or flags to pause and resume simulation.
+- [ ] Error recovery:
+  - [ ] Retry failed operations with backoff.
+
+data_types/base.py:
+- [ ] Immutability:
+  - [ ] Use @dataclass(frozen=True) or implement __setattr__ to prevent mutation.
+- [ ] Validation:
+  - [ ] Check hash formats (length, hex), depth non-negative.
+- [ ] Serialization:
+  - [ ] Add from_dict and to_dict with error handling.
+- [ ] Equality:
+  - [ ] Implement __eq__ and __hash__ for Triad and Transaction.
+
+wallet_manager.py:
+- [ ] Encryption:
+  - [ ] Stub methods for encrypting/decrypting private keys.
+- [ ] Address validation:
+  - [ ] Add checksum validation (e.g., EIP-55 style).
+- [ ] Concurrency:
+  - [ ] Use threading.Lock for wallet updates.
+- [ ] Logging:
+  - [ ] Add detailed logs for balance changes and transfers.
+- [ ] Signature verification:
+  - [ ] Add stub method for verifying transaction signatures.
+
+General:
+- [ ] Unit tests:
+  - [ ] Add tests for mining, simulation, data types, wallet operations.
+- [ ] Code style:
+  - [ ] Enforce PEP8 and docstring standards.
+- [ ] Logging:
+  - [ ] Use configurable log levels and formats.
+- [ ] Input sanitization:
+  - [ ] Validate all external inputs and handle exceptions gracefully.

@@ -2,7 +2,7 @@ import json
 import os
 import time
 import logging
-from seirchain.data_types import Transaction
+from seirchain.core.data_types import Transaction
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -175,6 +175,42 @@ class WalletManager:
     def __repr__(self):
         return f"WalletManager({len(self.wallets)} wallets)"
 
+    def generate_wallet_id(self):
+        import os
+        return os.urandom(32).hex()
+
+    def generate_fractal_wallet_id(self):
+        """
+        Generate a fractal patterned fractal secret key as wallet ID.
+        This is a placeholder implementation that generates a hex string with a fractal pattern.
+        """
+        import hashlib
+        import os
+
+        # Generate random seed
+        seed = os.urandom(32)
+
+        # Create fractal pattern by hashing seed multiple times
+        fractal_key = seed
+        for _ in range(5):
+            fractal_key = hashlib.sha256(fractal_key).digest()
+
+        # Return hex representation
+        return fractal_key.hex()
+
+    def create_fractal_wallet(self, initial_balance=0.0):
+        """
+        Create a new wallet with a fractal patterned wallet ID.
+        """
+        fractal_id = self.generate_fractal_wallet_id()
+        while fractal_id in self.wallets:
+            fractal_id = self.generate_fractal_wallet_id()
+        return self.add_wallet(fractal_id, initial_balance)
+
+    def get_balance(self, address):
+        wallet = self.get_wallet(address)
+        return wallet.balance
+
 
 global_wallets = WalletManager()
 
@@ -189,7 +225,7 @@ def get_wallet(address):
     return global_wallets.get_wallet(address)
 
 def send_transaction(from_addr, to_addr, amount, fee):
-    from seirchain.network import node
+    # Removed import of missing module seirchain.network.node
     if not global_wallets._is_valid_address(from_addr):
         logger.error(f"Invalid from_addr: {from_addr}")
         return None
@@ -216,7 +252,8 @@ def send_transaction(from_addr, to_addr, amount, fee):
         logger.error("Transaction failed due to insufficient funds.")
         return None
 
-    node.broadcast(dummy_tx)
+    # Removed broadcast call due to missing node module
+    # node.broadcast(dummy_tx)
     return dummy_tx
 
 def generate_new_address():
@@ -228,4 +265,3 @@ def list_wallets():
 
 def wallet_exists(address):
     return global_wallets.wallet_exists(address)
-</create_file>

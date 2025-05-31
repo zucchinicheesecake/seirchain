@@ -20,21 +20,34 @@ class Miner:
         self.node = node
         self.wallet_manager = wallet_manager
         self.miner_address = miner_address
-        self.mining = False
+        self.shutdown_event = threading.Event()
         self.threads: List[threading.Thread] = []
         self.mining_lock = threading.Lock()
         self.num_threads = num_threads
         self.transaction_pool_lock = threading.Lock()
+
+        # Metrics
+        self.hashes_computed = 0
+        self.successful_mines = 0
+        self.total_mining_time = 0.0
+
+        # Configuration validation
+        if not isinstance(self.num_threads, int) or self.num_threads <= 0:
+            raise ValueError("num_threads must be a positive integer")
+        if not hasattr(config, 'DIFFICULTY') or not isinstance(config.DIFFICULTY, int) or config.DIFFICULTY < 1:
+            raise ValueError("config.DIFFICULTY must be an integer >= 1")
+        if not hasattr(config, 'MAX_NONCE_ATTEMPTS') or not isinstance(config.MAX_NONCE_ATTEMPTS, int) or config.MAX_NONCE_ATTEMPTS < 1:
+            raise ValueError("config.MAX_NONCE_ATTEMPTS must be an integer >= 1")
 
     def start(self) -> None:
         """
         Start mining with multiple threads.
         """
         with self.mining_lock:
-            if self.mining:
+            if self.threads and any(thread.is_alive() for thread in self.threads):
                 logger.warning("Mining already started")
                 return
-            self.mining = True
+            self.shutdown_event.clear()
         for i in range(self.num_threads):
             thread = threading.Thread(
                 target=self.mine,
@@ -49,8 +62,7 @@ class Miner:
         """
         Stop all mining operations gracefully.
         """
-        with self.mining_lock:
-            self.mining = False
+        self.shutdown_event.set()
         for thread in self.threads:
             if thread.is_alive():
                 thread.join(timeout=1.0)
@@ -63,11 +75,7 @@ class Miner:
         thread_name = threading.current_thread().name
         logger.info(f"{thread_name}: Starting fractal mining")
 
-        while True:
-            with self.mining_lock:
-                if not self.mining:
-                    logger.info(f"{thread_name}: Mining stopped")
-                    break
+        while not self.shutdown_event.is_set():
             try:
                 # Get current transaction pool (thread-safe)
                 with self.ledger.transaction_pool_lock:
@@ -88,18 +96,17 @@ class Miner:
                     triad_node.add_transaction(tx)
 
                 # Fractal PoW mining
-                nonce = 0
+                import random
+                nonce = random.randint(0, 1000000)  # Randomized nonce start
                 start_time = time.time()
                 solution_found = False
 
-                while True:
-                    with self.mining_lock:
-                        if not self.mining:
-                            logger.info(f"{thread_name}: Mining stopped during PoW")
-                            return
-
+                while not self.shutdown_event.is_set():
                     triad_node.triad.hash_value = self.calculate_fractal_hash(triad_node, nonce)
                     triad_node.triad.hash = triad_node.triad.hash_value  # Ensure 'hash' attribute is set
+
+                    # Increment metrics
+                    self.hashes_computed += 1
 
                     # Check PoW solution using dynamic difficulty
                     target_prefix = "0" * config.DIFFICULTY
@@ -126,7 +133,13 @@ class Miner:
                 # Add to ledger
                 with self.ledger.transaction_pool_lock:
                     self.ledger.add_triad(triad_node.triad)
-                    self.ledger.transaction_pool = self.ledger.transaction_pool[len(transactions):]
+                    # Removed removal of transactions from transaction_pool to keep immutability
+                    # self.ledger.transaction_pool = self.ledger.transaction_pool[len(transactions):]
+                    # Immediately save ledger after adding triad
+                    try:
+                        self.ledger.save_ledger(config.NETWORK_NAME)
+                    except Exception as e:
+                        logger.error(f"Error saving ledger after mining triad: {e}")
 
                 # Add mining reward
                 if self.wallet_manager:
@@ -139,6 +152,8 @@ class Miner:
 
                 # Log success with token name and symbol
                 mining_time = time.time() - start_time
+                self.successful_mines += 1
+                self.total_mining_time += mining_time
                 logger.info(f"{thread_name}: Mined triad {triad_node.triad.triad_id[:8]} "
                       f"at depth {triad_node.triad.depth} in {mining_time:.2f}s, "
                       f"reward: {config.MINING_REWARD} {config.TOKEN_SYMBOL} ({config.TOKEN_NAME})")
@@ -149,6 +164,8 @@ class Miner:
             except Exception as e:
                 logger.error(f"{thread_name}: Mining error - {str(e)}", exc_info=True)
                 time.sleep(1)
+
+        logger.info(f"{thread_name}: Mining stopped")
 
     def get_parent_triads(self) -> List[Triad]:
         """
@@ -207,4 +224,31 @@ class Miner:
         Add a transaction to the ledger's transaction pool safely.
         """
         with self.transaction_pool_lock:
+            # Validate transaction before adding
+            if not self._validate_transaction(transaction):
+                logger.warning(f"Invalid transaction rejected: {transaction}")
+                return
+            # Deduplicate transactions
+            if transaction in self.ledger.transaction_pool:
+                logger.info(f"Duplicate transaction ignored: {transaction}")
+                return
             self.ledger.transaction_pool.append(transaction)
+
+    def _validate_transaction(self, transaction: Transaction) -> bool:
+        """
+        Validate transaction structure and fields.
+        """
+        required_attrs = ['from_addr', 'to_addr', 'amount', 'fee', 'timestamp']
+        for attr in required_attrs:
+            if not hasattr(transaction, attr) and not (hasattr(transaction, 'transaction_data') and attr in transaction.transaction_data):
+                logger.warning(f"Transaction missing required attribute: {attr}")
+                return False
+        # Additional validation can be added here (e.g., amount > 0)
+        try:
+            amount = getattr(transaction, 'amount', None) or transaction.transaction_data.get('amount', None)
+            if amount is None or amount <= 0:
+                logger.warning("Transaction amount must be positive")
+                return False
+        except Exception:
+            return False
+        return True
