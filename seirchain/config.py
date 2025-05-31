@@ -12,7 +12,7 @@ class Config:
         os.makedirs(self.data_dir, exist_ok=True) # Ensure data directory exists
 
         # --- Blockchain Core Settings ---
-        self.GENESIS_MINER_ADDRESS_testnet = "testnet_genesis_miner_0x123abc"
+        self.GENESIS_MINER_ADDRESS_testnet = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
         self.DIFFICULTY = 4  # Number of leading zeros required for a valid hash
         self.MINING_REWARD = 50.0  # Reward for mining a triad
         self.MAX_NONCE_ATTEMPTS = 1_000_000  # Max attempts for Proof-of-Work (adjust for desired speed)

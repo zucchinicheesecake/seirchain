@@ -2,18 +2,25 @@ class Triad:
     def __init__(self, triad_id, depth, hash_value, parent_hashes, **kwargs):
         self.triad_id = triad_id
         self.depth = depth
-        self.hash = hash_value  # Using 'hash' as the attribute name
+        self.hash_value = hash_value  # Use consistent attribute name 'hash_value'
         self.parent_hashes = parent_hashes
-        
+        self.child_hashes = []  # Initialize child_hashes as empty list
+
         # Handle any additional properties
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def add_child(self, child_triad):
+        if not hasattr(self, 'child_hashes'):
+            self.child_hashes = []
+        if child_triad.hash_value not in self.child_hashes:
+            self.child_hashes.append(child_triad.hash_value)
             
     def __str__(self):
         return (
             f"Triad: {self.triad_id[:8]}..., "
             f"depth={self.depth}, "
-            f"hash={self.hash[:8]}..., "
+            f"hash={self.hash_value[:8]}..., "
             f"parents={len(self.parent_hashes)}"
         )
         
@@ -21,9 +28,19 @@ class Triad:
         return (
             f"<Triad {self.triad_id[:8]} "
             f"d={self.depth} "
-            f"h={self.hash[:8]} "
+            f"h={self.hash_value[:8]} "
             f"p={len(self.parent_hashes)}>"
         )
+
+    def to_dict(self):
+        return {
+            'triad_id': self.triad_id,
+            'depth': self.depth,
+            'hash_value': self.hash_value,
+            'parent_hashes': self.parent_hashes,
+            'child_hashes': self.child_hashes,
+            # Add any other relevant attributes if needed
+        }
 
 
 class TriadNode:

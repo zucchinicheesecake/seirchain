@@ -8,6 +8,10 @@ class Triangle:
     def add_transaction(self, transaction):
         """Add a transaction to this triangle"""
         self.transactions.append(transaction)
+
+    def get_transactions(self):
+        """Return the list of transactions"""
+        return self.transactions
         
     def add_child(self, triangle):
         """Add a child triangle in the fractal structure"""

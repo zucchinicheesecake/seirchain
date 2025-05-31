@@ -2,7 +2,12 @@ import threading
 import time
 import hashlib
 import os
-from seirchain.data_types import Triad, Transaction, Triangle
+import logging
+from seirchain.data_types.base import Triad, Triangle
+from seirchain.data_types.transaction import Transaction
+from seirchain.config import config
+
+logger = logging.getLogger(__name__)
 
 class Miner:
     def __init__(self, ledger, node, wallet_manager, miner_address, num_threads=1):
@@ -14,10 +19,15 @@ class Miner:
         self.threads = []
         self.mining_lock = threading.Lock()
         self.num_threads = num_threads
+        self.transaction_pool_lock = threading.Lock()
 
     def start(self):
         """Start mining with multiple threads"""
-        self.mining = True
+        with self.mining_lock:
+            if self.mining:
+                logger.warning("Mining already started")
+                return
+            self.mining = True
         for i in range(self.num_threads):
             thread = threading.Thread(
                 target=self.mine,
@@ -26,11 +36,12 @@ class Miner:
             )
             thread.start()
             self.threads.append(thread)
-        print(f"Starting fractal mining with {self.num_threads} threads")
+        logger.info(f"Starting fractal mining with {self.num_threads} threads")
 
     def stop(self):
         """Stop all mining operations"""
-        self.mining = False
+        with self.mining_lock:
+            self.mining = False
         for thread in self.threads:
             if thread.is_alive():
                 thread.join(timeout=1.0)
@@ -39,12 +50,16 @@ class Miner:
     def mine(self):
         """Mine new triads using fractal PoW"""
         thread_name = threading.current_thread().name
-        print(f"{thread_name}: Starting fractal mining")
+        logger.info(f"{thread_name}: Starting fractal mining")
 
-        while self.mining:
+        while True:
+            with self.mining_lock:
+                if not self.mining:
+                    logger.info(f"{thread_name}: Mining stopped")
+                    break
             try:
                 # Get current transaction pool (thread-safe)
-                with self.mining_lock:
+                with self.transaction_pool_lock:
                     transactions = self.ledger.transaction_pool[:10]
 
                 # Create new triad
@@ -66,11 +81,18 @@ class Miner:
                 start_time = time.time()
                 solution_found = False
 
-                while self.mining and not solution_found:
-                    triad_node.triad.hash_value = self.calculate_fractal_hash(triad_node, nonce)
+                while True:
+                    with self.mining_lock:
+                        if not self.mining:
+                            logger.info(f"{thread_name}: Mining stopped during PoW")
+                            return
 
-                    # Check PoW solution
-                    if triad_node.triad.hash_value.startswith("00000"):
+                    triad_node.triad.hash_value = self.calculate_fractal_hash(triad_node, nonce)
+                    triad_node.triad.hash = triad_node.triad.hash_value  # Ensure 'hash' attribute is set
+
+                    # Check PoW solution using dynamic difficulty
+                    target_prefix = "0" * config.DIFFICULTY
+                    if triad_node.triad.hash_value.startswith(target_prefix):
                         solution_found = True
                         break
 
@@ -80,16 +102,18 @@ class Miner:
                     if nonce % 1000 == 0:
                         time.sleep(0.001)
 
-                # If mining was stopped
-                if not self.mining:
-                    print(f"{thread_name}: Mining stopped")
-                    return
+                    if nonce > config.MAX_NONCE_ATTEMPTS:
+                        logger.info(f"{thread_name}: Max nonce attempts reached, restarting mining cycle")
+                        break
+
+                if not solution_found:
+                    continue
 
                 # Set triad ID
                 triad_node.triad.triad_id = triad_node.triad.hash_value
 
                 # Add to ledger
-                with self.mining_lock:
+                with self.transaction_pool_lock:
                     self.ledger.add_triad(triad_node.triad)
                     self.ledger.transaction_pool = self.ledger.transaction_pool[len(transactions):]
 
@@ -104,27 +128,38 @@ class Miner:
 
                 # Log success
                 mining_time = time.time() - start_time
-                print(f"{thread_name}: Mined triad {triad_node.triad.triad_id[:8]} "
+                logger.info(f"{thread_name}: Mined triad {triad_node.triad.triad_id[:8]} "
                       f"at depth {triad_node.triad.depth} in {mining_time:.2f}s")
 
                 # Brief pause between mining cycles
                 time.sleep(0.5)
 
             except Exception as e:
-                print(f"{thread_name}: Mining error - {str(e)}")
-                import traceback
-                traceback.print_exc()
+                logger.error(f"{thread_name}: Mining error - {str(e)}", exc_info=True)
                 time.sleep(1)
 
     def get_parent_triads(self):
         """Select parent triads for the new triad"""
-        if not self.ledger.triads:
+        if not hasattr(self.ledger, '_triad_map'):
             return []
-        return [self.ledger.triads[-1]]
+        tip_hashes = self.ledger.get_current_tip_triad_hashes()
+        if not tip_hashes:
+            return []
+        # Retrieve triad objects from _triad_map using tip hashes
+        parents = [self.ledger._triad_map[tip_hash] for tip_hash in tip_hashes if tip_hash in self.ledger._triad_map]
+        return parents
 
     def calculate_fractal_hash(self, triad_node, nonce):
         """Calculate fractal hash for triad"""
-        tx_hashes = "".join(tx.tx_hash for tx in triad_node.get_transactions())
+        tx_hashes = ""
+        for tx in triad_node.transactions:
+            if hasattr(tx, 'tx_hash'):
+                tx_hashes += tx.tx_hash
+            elif hasattr(tx, 'transaction') and hasattr(tx.transaction, 'tx_hash'):
+                tx_hashes += tx.transaction.tx_hash
+            else:
+                import logging
+                logging.getLogger(__name__).warning(f"Transaction missing tx_hash attribute: {tx}")
         data = f"{triad_node.triad.depth}-{nonce}-{tx_hashes}"
 
         # Double SHA-256
@@ -133,13 +168,24 @@ class Miner:
 
     def create_reward_transaction(self):
         """Create mining reward transaction"""
-        return Transaction(
-            transaction_data={
-                'from_addr': "0"*40,
-                'to_addr': self.miner_address,
-                'amount': 50.0,
-                'fee': 0.0
-            },
+        # Create a Transaction object with attributes matching wallet_manager expectations
+        tx_data = {
+            'from_addr': "0"*64,
+            'to_addr': self.miner_address,
+            'amount': config.MINING_REWARD,
+            'fee': 0.0,
+            'timestamp': time.time(),
+            'signature': None
+        }
+        # Create Transaction instance with property accessors for from_addr etc.
+        reward_tx = Transaction(
+            transaction_data=tx_data,
             tx_hash=hashlib.sha256(os.urandom(32)).hexdigest(),
             timestamp=time.time()
         )
+        return reward_tx
+
+    def add_transaction_to_pool(self, transaction):
+        """Add a transaction to the ledger's transaction pool safely"""
+        with self.transaction_pool_lock:
+            self.ledger.transaction_pool.append(transaction)
