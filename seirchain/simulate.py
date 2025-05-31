@@ -11,7 +11,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.insert(0, project_root)
 
 from seirchain.triangular_ledger.triangular_ledger import TriangularLedger
-from seirchain.data_types.wallets import wallets as main_wallets_manager
+from seirchain.data_types import wallets as main_wallets_manager
 from seirchain.data_types.transaction import Transaction, TransactionNode
 from seirchain.miner import Miner
 from seirchain.config import config

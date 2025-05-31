@@ -9,8 +9,8 @@ set -e # Exit immediately if a command exits with a non-zero status.
 
 # 1. Clone the repository (you might want to customize the URL)
 echo "Cloning the SeirChain repository..."
-git clone https://github.com/your-username/seirchain.git # Replace with actual repo URL if different
-cd seirchain
+# git clone https://github.com/your-username/seirchain.git # Replace with actual repo URL if different
+# cd seirchain
 
 # 2. Create and activate the virtual environment
 echo "Setting up the Python virtual environment..."
