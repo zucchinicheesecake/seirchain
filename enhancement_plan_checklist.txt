@@ -4,30 +4,30 @@ miner.py:
 - [x] Implement graceful shutdown:
   - [x] Add a threading.Event to signal shutdown.
   - [x] Modify mining loops to check this event and exit cleanly.
-- [ ] Thread lifecycle management:
-  - [ ] Track thread states and ensure proper join on stop.
-- [ ] Metrics collection:
-  - [ ] Add counters for hashes computed, successful mines, mining duration.
-  - [ ] Expose metrics via properties or logging.
-- [ ] Nonce search strategy:
-  - [ ] Use randomized nonce start points or partition nonce ranges per thread.
-- [ ] Configuration validation:
-  - [ ] Validate DIFFICULTY, MAX_NONCE_ATTEMPTS, and thread count on startup.
-- [ ] Transaction pool handling:
-  - [ ] Validate transactions before adding to pool.
-  - [ ] Deduplicate transactions in pool.
+- [x] Thread lifecycle management:
+  - [x] Track thread states and ensure proper join on stop.
+- [x] Metrics collection:
+  - [x] Add counters for hashes computed, successful mines, mining duration.
+  - [x] Expose metrics via properties or logging.
+- [x] Nonce search strategy:
+  - [x] Use randomized nonce start points or partition nonce ranges per thread.
+- [x] Configuration validation:
+  - [x] Validate DIFFICULTY, MAX_NONCE_ATTEMPTS, and thread count on startup.
+- [x] Transaction pool handling:
+  - [x] Validate transactions before adding to pool.
+  - [x] Deduplicate transactions in pool.
 
 simulate.py:
-- [ ] Configuration validation:
-  - [ ] Check all config parameters for valid ranges and types.
-- [ ] Modularize:
-  - [ ] Separate wallet initialization, transaction generation, and simulation loop into functions.
-- [ ] Metrics and logging:
-  - [ ] Log transaction rates, wallet balances periodically.
-- [ ] Pause/resume:
-  - [ ] Implement signal handlers or flags to pause and resume simulation.
-- [ ] Error recovery:
-  - [ ] Retry failed operations with backoff.
+- [x] Configuration validation:
+  - [x] Check all config parameters for valid ranges and types.
+- [x] Modularize:
+  - [x] Separate wallet initialization, transaction generation, and simulation loop into functions.
+- [x] Metrics and logging:
+  - [x] Log transaction rates, wallet balances periodically.
+- [x] Pause/resume:
+  - [x] Implement signal handlers or flags to pause and resume simulation.
+- [x] Error recovery:
+  - [x] Retry failed operations with backoff.
 
 data_types/base.py:
 - [ ] Immutability:

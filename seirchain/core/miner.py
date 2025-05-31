@@ -22,6 +22,7 @@ class Miner:
         self.miner_address = miner_address
         self.shutdown_event = threading.Event()
         self.threads: List[threading.Thread] = []
+        self.thread_states = {}  # Track thread states: starting, running, stopping, stopped
         self.mining_lock = threading.Lock()
         self.num_threads = num_threads
         self.transaction_pool_lock = threading.Lock()
@@ -32,6 +33,12 @@ class Miner:
         self.total_mining_time = 0.0
 
         # Configuration validation
+        self._validate_config()
+
+    def _validate_config(self) -> None:
+        """
+        Validate configuration parameters for mining.
+        """
         if not isinstance(self.num_threads, int) or self.num_threads <= 0:
             raise ValueError("num_threads must be a positive integer")
         if not hasattr(config, 'DIFFICULTY') or not isinstance(config.DIFFICULTY, int) or config.DIFFICULTY < 1:
@@ -48,14 +55,18 @@ class Miner:
                 logger.warning("Mining already started")
                 return
             self.shutdown_event.clear()
+            self.thread_states.clear()
         for i in range(self.num_threads):
+            thread_name = f"Miner-Thread-{i+1}"
+            self.thread_states[thread_name] = "starting"
             thread = threading.Thread(
                 target=self.mine,
-                name=f"Miner-Thread-{i+1}",
+                name=thread_name,
                 daemon=True
             )
             thread.start()
             self.threads.append(thread)
+            self.thread_states[thread_name] = "running"
         logger.info(f"Starting fractal mining with {self.num_threads} threads")
 
     def stop(self) -> None:
@@ -64,9 +75,19 @@ class Miner:
         """
         self.shutdown_event.set()
         for thread in self.threads:
+            thread_name = thread.name
+            self.thread_states[thread_name] = "stopping"
             if thread.is_alive():
-                thread.join(timeout=1.0)
+                joined = thread.join(timeout=5.0)
+                if thread.is_alive():
+                    logger.warning(f"{thread_name} did not stop within timeout")
+                else:
+                    self.thread_states[thread_name] = "stopped"
+            else:
+                self.thread_states[thread_name] = "stopped"
         self.threads = []
+        self.thread_states.clear()
+        logger.info("All mining threads have been stopped")
 
     def mine(self) -> None:
         """
@@ -74,6 +95,7 @@ class Miner:
         """
         thread_name = threading.current_thread().name
         logger.info(f"{thread_name}: Starting fractal mining")
+        self.thread_states[thread_name] = "running"
 
         while not self.shutdown_event.is_set():
             try:
@@ -97,7 +119,13 @@ class Miner:
 
                 # Fractal PoW mining
                 import random
-                nonce = random.randint(0, 1000000)  # Randomized nonce start
+                # Partition nonce ranges per thread to avoid overlap
+                max_nonce = config.MAX_NONCE_ATTEMPTS
+                nonce_range_per_thread = max_nonce // self.num_threads
+                thread_index = int(thread_name.split('-')[-1]) - 1  # Extract thread index from name
+                nonce_start = thread_index * nonce_range_per_thread
+                nonce_end = nonce_start + nonce_range_per_thread - 1
+                nonce = random.randint(nonce_start, nonce_end)
                 start_time = time.time()
                 solution_found = False
 
@@ -120,8 +148,8 @@ class Miner:
                     if nonce % 1000 == 0:
                         time.sleep(0.001)
 
-                    if nonce > config.MAX_NONCE_ATTEMPTS:
-                        logger.info(f"{thread_name}: Max nonce attempts reached, restarting mining cycle")
+                    if nonce > nonce_end:
+                        logger.info(f"{thread_name}: Max nonce attempts reached in partition, restarting mining cycle")
                         break
 
                 if not solution_found:
@@ -165,6 +193,7 @@ class Miner:
                 logger.error(f"{thread_name}: Mining error - {str(e)}", exc_info=True)
                 time.sleep(1)
 
+        self.thread_states[thread_name] = "stopped"
         logger.info(f"{thread_name}: Mining stopped")
 
     def get_parent_triads(self) -> List[Triad]:
@@ -228,9 +257,9 @@ class Miner:
             if not self._validate_transaction(transaction):
                 logger.warning(f"Invalid transaction rejected: {transaction}")
                 return
-            # Deduplicate transactions
-            if transaction in self.ledger.transaction_pool:
-                logger.info(f"Duplicate transaction ignored: {transaction}")
+            # Deduplicate transactions by tx_hash to avoid duplicates
+            if any(tx.tx_hash == transaction.tx_hash for tx in self.ledger.transaction_pool):
+                logger.info(f"Duplicate transaction ignored based on tx_hash: {transaction.tx_hash}")
                 return
             self.ledger.transaction_pool.append(transaction)
 
@@ -252,3 +281,30 @@ class Miner:
         except Exception:
             return False
         return True
+
+    @property
+    def metrics(self):
+        """
+        Return current mining metrics as a dictionary.
+        """
+        return {
+            "hashes_computed": self.hashes_computed,
+            "successful_mines": self.successful_mines,
+            "total_mining_time": self.total_mining_time,
+        }
+
+    def reset_metrics(self) -> None:
+        """
+        Reset mining metrics counters.
+        """
+        self.hashes_computed = 0
+        self.successful_mines = 0
+        self.total_mining_time = 0.0
+
+    def log_metrics(self) -> None:
+        """
+        Log current mining metrics.
+        """
+        logger.info(f"Mining Metrics - Hashes Computed: {self.hashes_computed}, "
+                    f"Successful Mines: {self.successful_mines}, "
+                    f"Total Mining Time: {self.total_mining_time:.2f} seconds")
