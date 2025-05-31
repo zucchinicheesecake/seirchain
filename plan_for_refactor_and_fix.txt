@@ -37,3 +37,14 @@ Additional Deployment and Archiving Plan Checklist:
 [x] 7. Verify that genesis ledgers are archived and ignored by git.
 
 This checklist will help track progress and assist successors in understanding the deployment and archiving process.
+
+Extended Plan Additions:
+
+- Commit and push changes related to genesis ledger archiving and .gitignore updates.
+- Document the deployment and archiving process clearly in the project documentation.
+- Ensure all team members and successors are aware of the new process to prevent accidental mining at genesis.
+- Periodically review and update the deployment plan as the project evolves.
+- Add automated checks or CI steps to verify genesis ledgers are not modified or mined again.
+- Enhance logging and monitoring around genesis ledger usage and mining activities.
+- Prepare rollback and recovery procedures in case of deployment issues.
+- Continue refactoring and improving core modules as per the original plan.
