@@ -1,19 +1,20 @@
 import json
 import os
-from seirchain.data_types import Triad, Transaction
+from typing import List
+from seirchain.core.data_types import Triad, Transaction
 
 class TriangularLedger:
-    def __init__(self):
-        self.triads = []
-        self.transaction_pool = []
+    def __init__(self) -> None:
+        self.triads: List[Triad] = []
+        self.transaction_pool: List[Transaction] = []
         
-    def add_triad(self, triad):
+    def add_triad(self, triad: Triad) -> None:
         self.triads.append(triad)
         
-    def add_transaction(self, transaction):
+    def add_transaction(self, transaction: Transaction) -> None:
         self.transaction_pool.append(transaction)
         
-    def load_ledger(self, network):
+    def load_ledger(self, network: str) -> None:
         """Load ledger from JSON file"""
         filename = f"data/ledger_{network}.json"
         if not os.path.exists(filename):
@@ -36,7 +37,7 @@ class TriangularLedger:
                 Transaction(**tx) for tx in ledger_data.get('transaction_pool', [])
             ]
                 
-    def save_ledger(self, network):
+    def save_ledger(self, network: str) -> None:
         """Save ledger to JSON file"""
         ledger_data = {
             'triads': [t.__dict__ for t in self.triads],
@@ -47,7 +48,7 @@ class TriangularLedger:
         with open(filename, 'w') as f:
             json.dump(ledger_data, f, indent=2)
             
-    def generate_genesis_triad(self):
+    def generate_genesis_triad(self) -> None:
         """Create the first triad in the matrix"""
         genesis = Triad(
             triad_id="0"*64,
@@ -57,5 +58,5 @@ class TriangularLedger:
         )
         self.triads = [genesis]
         
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"TriangularLedger(triads={len(self.triads)}, transactions={len(self.transaction_pool)})"

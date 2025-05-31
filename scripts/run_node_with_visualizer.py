@@ -1,17 +1,34 @@
 #!/usr/bin/env python3
 import argparse
 import time
+import logging
 from seirchain import TriangularLedger, Miner, Node, global_wallets, render_ascii
-from seirchain.data_types import Transaction, Triad, Triangle
+from seirchain.core.data_types import Transaction, Triad, Triangle
+from seirchain.config import config
 
-def run_node(port, miner_threads):
+logger = logging.getLogger(__name__)
+
+def run_node(port: int, miner_threads: int, network: str = 'mainnet') -> None:
     # Initialize ledger
-    ledger = TriangularLedger()
-    ledger.create_genesis_triad()
+    ledger = TriangularLedger(config.MAX_DEPTH)
+    
+    # Load ledger from file or create genesis triad
+    try:
+        ledger = TriangularLedger.load_from_json(f"data/ledger_{network}.json")
+        logger.info(f"Ledger loaded from data/ledger_{network}.json")
+    except (FileNotFoundError, ValueError) as e:
+        logger.warning(f"Ledger load failed: {e}. Creating new genesis triad.")
+        genesis_triad = Triad(
+            triad_id="0"*64,
+            depth=0,
+            hash_value="0"*64,
+            parent_hashes=[]
+        )
+        ledger.add_triad(genesis_triad)
     
     # Initialize wallet manager (simplified)
     class WalletManager:
-        def update_balances(self, tx):
+        def update_balances(self, tx: Transaction) -> None:
             pass
             
     wallet_manager = WalletManager()
@@ -24,18 +41,18 @@ def run_node(port, miner_threads):
     miner = Miner(ledger, node, wallet_manager, miner_address, num_threads=miner_threads)
     
     # Start services
-    print("Starting Seirchain Node with Visualizer...")
+    logger.info("Starting Seirchain Node with Visualizer...")
     node.start()
     miner.start()
     
     # Visualization loop
     try:
-        print("Initialization complete. Starting services...")
-        print("Starting visualization thread...")
+        logger.info("Initialization complete. Starting services...")
+        logger.info("Starting visualization thread...")
         while True:
             print("\n==== TRIAD MATRIX ====")
-            print(f"Depth: {ledger.triads[-1].depth if ledger.triads else 0}")
-            print(f"Triads: {len(ledger.triads)}")
+            print(f"Depth: {ledger.genesis_triad.depth if ledger.genesis_triad else 0}")
+            print(f"Triads: {len(ledger._triad_map)}")
             print(f"Pending Transactions: {len(ledger.transaction_pool)}")
             print("Fractal Representation:")
             print(render_ascii(ledger))
@@ -43,7 +60,7 @@ def run_node(port, miner_threads):
             time.sleep(5)
             
     except KeyboardInterrupt:
-        print("\nStopping node...")
+        logger.info("Stopping node...")
         miner.stop()
         node.stop()
 
@@ -54,4 +71,4 @@ if __name__ == "__main__":
     parser.add_argument('--miner-threads', type=int, default=1, help='Number of mining threads')
     args = parser.parse_args()
     
-    run_node(args.port, args.miner_threads)
+    run_node(args.port, args.miner_threads, args.network)

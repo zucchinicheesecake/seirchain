@@ -4,8 +4,9 @@ import hashlib
 import time
 import uuid
 from collections import deque
-from seirchain.data_types.triad import Triad
-from seirchain.data_types.transaction import TransactionNode, Transaction
+from typing import Optional, List, Generator
+from seirchain.core.data_types.triad import Triad
+from seirchain.core.data_types.transaction import TransactionNode, Transaction
 from seirchain.config import config
 import logging
 import threading
@@ -17,7 +18,7 @@ class TriadEncoder(json.JSONEncoder):
     Custom JSONEncoder to serialize Triad, TransactionNode, and Transaction objects.
     It simply calls the .to_dict() method on objects that have it.
     """
-    def default(self, obj):
+    def default(self, obj: object) -> object:
         if hasattr(obj, 'to_dict') and callable(getattr(obj, 'to_dict')):
             return obj.to_dict()
         return json.JSONEncoder.default(self, obj)
@@ -28,12 +29,12 @@ class TriangularLedger:
     It's designed to hold a genesis triad and subsequent triads,
     maintaining a tree-like structure.
     """
-    def __init__(self, max_depth, genesis_triad=None):
+    def __init__(self, max_depth: int, genesis_triad: Optional[Triad] = None) -> None:
         self.max_depth = max_depth
         self.genesis_triad = genesis_triad
         self.difficulty = config.DIFFICULTY
-        self._triad_map = {} # Stores all triads by their hash for quick lookup
-        self.transaction_pool = []  # Add transaction pool to hold pending transactions
+        self._triad_map: dict[str, Triad] = {} # Stores all triads by their hash for quick lookup
+        self.transaction_pool: List[Transaction] = []  # Add transaction pool to hold pending transactions
         self.transaction_pool_lock = threading.Lock()
 
         if self.genesis_triad:
@@ -44,7 +45,7 @@ class TriangularLedger:
         else:
             logger.info("Ledger initialized without a Genesis Triad. Please run genesis generation.")
 
-    def add_triad(self, new_triad):
+    def add_triad(self, new_triad: Triad) -> bool:
         """
         Adds a new triad to the ledger.
         It finds the correct parent(s) based on current tip hashes and links the new triad.
@@ -73,7 +74,7 @@ class TriangularLedger:
 
         return found_parent
 
-    def add_transaction(self, transaction):
+    def add_transaction(self, transaction: Transaction) -> None:
         """
         Thread-safe addition of a transaction to the transaction pool.
         """
@@ -81,7 +82,7 @@ class TriangularLedger:
             self.transaction_pool.append(transaction)
             logger.info(f"Transaction added to pool: {transaction.tx_hash}")
 
-    def get_current_tip_triad_hashes(self):
+    def get_current_tip_triad_hashes(self) -> List[str]:
         """
         Returns a list of hashes of the current 'tip' triads in the ledger.
         These are triads that have no children, representing the latest points for new mining.
@@ -90,9 +91,9 @@ class TriangularLedger:
         if not self.genesis_triad:
             return []
 
-        tips = []
-        q = deque([self.genesis_triad])
-        visited = set()
+        tips: List[str] = []
+        q: deque[Triad] = deque([self.genesis_triad])
+        visited: set[str] = set()
 
         while q:
             current_triad = q.popleft()
@@ -111,14 +112,14 @@ class TriangularLedger:
 
         return tips if tips else [self.genesis_triad.hash_value]
 
-    def get_total_triads(self):
+    def get_total_triads(self) -> int:
         """
         Counts the total number of triads in the ledger using the _triad_map size.
         Much more efficient than traversal.
         """
         return len(self._triad_map)
 
-    def get_all_transactions(self):
+    def get_all_transactions(self) -> Generator[Transaction, None, None]:
         """
         Generator that yields all individual Transaction objects from all Triads in the ledger.
         Uses the _triad_map for efficient traversal.
@@ -126,8 +127,8 @@ class TriangularLedger:
         if not self.genesis_triad:
             return
 
-        q = deque([self.genesis_triad])
-        visited = set()
+        q: deque[Triad] = deque([self.genesis_triad])
+        visited: set[str] = set()
 
         while q:
             current_triad = q.popleft()
@@ -143,14 +144,14 @@ class TriangularLedger:
                 if child_triad and child_triad.hash_value not in visited:
                     q.append(child_triad)
 
-    def _find_triad_by_hash(self, target_hash):
+    def _find_triad_by_hash(self, target_hash: str) -> Optional[Triad]:
         """
         Helper method to find a triad by its hash.
         Now uses the _triad_map for direct O(1) lookup.
         """
         return self._triad_map.get(target_hash)
 
-    def save_to_json(self, filename):
+    def save_to_json(self, filename: str) -> None:
         """Saves the entire ledger (all triads in _triad_map) to a JSON file."""
         if not self.genesis_triad:
             logger.warning("No genesis triad to save.")
@@ -173,7 +174,7 @@ class TriangularLedger:
             logger.error(f"Error saving ledger to {filename}: {e}")
 
     @staticmethod
-    def load_from_json(filename):
+    def load_from_json(filename: str) -> 'TriangularLedger':
         """Loads the entire ledger from a JSON file, reconstructing links."""
         if not os.path.exists(filename):
             raise FileNotFoundError(f"Ledger file not found: {filename}")
@@ -191,7 +192,7 @@ class TriangularLedger:
             raise ValueError(f"Invalid ledger JSON format in {filename}: missing 'genesis_hash' or 'all_triads' key.")
 
         # Step 1: Reconstruct all Triad objects and populate a temporary map
-        temp_triad_map = {}
+        temp_triad_map: dict[str, Triad] = {}
         for triad_data in all_triads_data:
             try:
                 transactions = [

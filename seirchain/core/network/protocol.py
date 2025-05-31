@@ -1,17 +1,18 @@
 import json
 import logging
-from seirchain.data_types import Triad, Transaction
+from typing import Any, Dict
+from seirchain.core.data_types import Triad, Transaction
 from seirchain.config import config
 
 logger = logging.getLogger(__name__)
 
 class MessageHandler:
-    def __init__(self, node, ledger, wallet_manager):
+    def __init__(self, node: object, ledger: object, wallet_manager: object) -> None:
         self.node = node
         self.ledger = ledger
         self.wallet_manager = wallet_manager
 
-    def handle_message(self, raw_message, peer_socket):
+    def handle_message(self, raw_message: str, peer_socket: object) -> None:
         try:
             message = json.loads(raw_message)
             msg_type = message.get('type')
@@ -30,7 +31,7 @@ class MessageHandler:
         except Exception as e:
             logger.error(f"Error handling message: {str(e)}")
 
-    def handle_transaction(self, tx_data):
+    def handle_transaction(self, tx_data: Dict[str, Any]) -> None:
         try:
             tx = Transaction(
                 transaction_data=tx_data['transaction_data'],
@@ -54,7 +55,7 @@ class MessageHandler:
         except Exception as e:
             logger.error(f"Transaction handling error: {str(e)}")
 
-    def handle_triad(self, triad_data):
+    def handle_triad(self, triad_data: Dict[str, Any]) -> None:
         try:
             triad = Triad(
                 triad_id=triad_data['triad_id'],
@@ -76,7 +77,7 @@ class MessageHandler:
         except Exception as e:
             logger.error(f"Triad handling error: {str(e)}")
 
-    def validate_triad(self, triad):
+    def validate_triad(self, triad: Triad) -> bool:
         """Basic triad validation"""
         # 1. Verify hash meets difficulty requirement
         target_prefix = "0" * config.DIFFICULTY
@@ -94,7 +95,7 @@ class MessageHandler:
 
         return True
 
-    def validate_transaction(self, transaction):
+    def validate_transaction(self, transaction: Transaction) -> bool:
         """Basic transaction validation"""
         # Check for required fields
         required_fields = ['from_addr', 'to_addr', 'amount', 'fee', 'timestamp']
@@ -117,7 +118,7 @@ class MessageHandler:
 
         return True
 
-    def _is_valid_address(self, address):
+    def _is_valid_address(self, address: str) -> bool:
         if not isinstance(address, str):
             return False
         if len(address) not in (40, 64):

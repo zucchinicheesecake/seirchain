@@ -3,8 +3,9 @@ import time
 import hashlib
 import os
 import logging
-from seirchain.data_types.base import Triad, Triangle
-from seirchain.data_types.transaction import Transaction
+from typing import List, Optional
+from seirchain.core.data_types.base import Triad, Triangle
+from seirchain.core.data_types.transaction import Transaction
 from seirchain.config import config
 
 logger = logging.getLogger(__name__)
@@ -13,18 +14,19 @@ class Miner:
     """
     Manages mining operations with thread safety, fractal PoW, and transaction pool handling.
     """
-    def __init__(self, ledger, node, wallet_manager, miner_address, num_threads=1):
+
+    def __init__(self, ledger: object, node: object, wallet_manager: object, miner_address: str, num_threads: int = 1) -> None:
         self.ledger = ledger
         self.node = node
         self.wallet_manager = wallet_manager
         self.miner_address = miner_address
         self.mining = False
-        self.threads = []
+        self.threads: List[threading.Thread] = []
         self.mining_lock = threading.Lock()
         self.num_threads = num_threads
         self.transaction_pool_lock = threading.Lock()
 
-    def start(self):
+    def start(self) -> None:
         """
         Start mining with multiple threads.
         """
@@ -43,7 +45,7 @@ class Miner:
             self.threads.append(thread)
         logger.info(f"Starting fractal mining with {self.num_threads} threads")
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stop all mining operations gracefully.
         """
@@ -54,7 +56,7 @@ class Miner:
                 thread.join(timeout=1.0)
         self.threads = []
 
-    def mine(self):
+    def mine(self) -> None:
         """
         Mine new triads using fractal proof-of-work.
         """
@@ -148,7 +150,7 @@ class Miner:
                 logger.error(f"{thread_name}: Mining error - {str(e)}", exc_info=True)
                 time.sleep(1)
 
-    def get_parent_triads(self):
+    def get_parent_triads(self) -> List[Triad]:
         """
         Select parent triads for the new triad.
         """
@@ -161,7 +163,7 @@ class Miner:
         parents = [self.ledger._triad_map[tip_hash] for tip_hash in tip_hashes if tip_hash in self.ledger._triad_map]
         return parents
 
-    def calculate_fractal_hash(self, triad_node, nonce):
+    def calculate_fractal_hash(self, triad_node: Triangle, nonce: int) -> str:
         """
         Calculate fractal hash for triad.
         """
@@ -172,7 +174,6 @@ class Miner:
             elif hasattr(tx, 'transaction') and hasattr(tx.transaction, 'tx_hash'):
                 tx_hashes += tx.transaction.tx_hash
             else:
-                import logging
                 logging.getLogger(__name__).warning(f"Transaction missing tx_hash attribute: {tx}")
         data = f"{triad_node.triad.depth}-{nonce}-{tx_hashes}"
 
@@ -180,7 +181,7 @@ class Miner:
         first_hash = hashlib.sha256(data.encode()).hexdigest()
         return hashlib.sha256(first_hash.encode()).hexdigest()
 
-    def create_reward_transaction(self):
+    def create_reward_transaction(self) -> Transaction:
         """
         Create mining reward transaction.
         """
@@ -201,7 +202,7 @@ class Miner:
         )
         return reward_tx
 
-    def add_transaction_to_pool(self, transaction):
+    def add_transaction_to_pool(self, transaction: Transaction) -> None:
         """
         Add a transaction to the ledger's transaction pool safely.
         """
