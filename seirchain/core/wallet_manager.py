@@ -44,12 +44,15 @@ class Wallet:
         return f"Wallet({self.address[:12]}..., balance={self.balance})"
 
 
+import threading
+
 class WalletManager:
     """
     Manages multiple wallets, providing methods to get, add, update, and save wallets.
     """
     def __init__(self):
         self.wallets = {}
+        self.lock = threading.Lock()
 
     def get_wallet(self, address):
         if not self._is_valid_address(address):
@@ -60,6 +63,135 @@ class WalletManager:
         if address not in self.wallets:
             self.wallets[address] = Wallet(address)
         return self.wallets[address]
+
+    def add_wallet(self, address, initial_balance=0.0):
+        if not self._is_valid_address(address):
+            raise ValueError(f"Invalid wallet address: {address}")
+        with self.lock:
+            if address not in self.wallets:
+                self.wallets[address] = Wallet(address, initial_balance)
+        return self.wallets[address]
+
+    def wallet_exists(self, address):
+        with self.lock:
+            return address in self.wallets
+
+    def update_balances(self, transaction):
+        from_addr = None
+        to_addr = None
+        amount = None
+        fee = None
+        try:
+            from_addr = transaction.from_addr
+            to_addr = transaction.to_addr
+            amount = transaction.amount
+            fee = transaction.fee
+        except AttributeError:
+            from_addr = transaction.transaction_data.get('from_addr')
+            to_addr = transaction.transaction_data.get('to_addr')
+            amount = transaction.transaction_data.get('amount')
+            fee = transaction.transaction_data.get('fee')
+
+        zero_address_64 = "0" * 64
+        if len(from_addr) == 40:
+            from_addr = from_addr.rjust(64, '0')
+        if from_addr.strip() == zero_address_64:
+            receiver = self.get_wallet(to_addr)
+            try:
+                with self.lock:
+                    receiver.update_balance(amount)
+                logger.info(f"Added {amount} to wallet {to_addr[:8]} (coinbase transaction)")
+            except ValueError as e:
+                logger.error(f"Balance update error: {e}")
+                return False
+            receiver.add_transaction(transaction.tx_hash)
+            return True
+
+        sender = self.get_wallet(from_addr)
+        receiver = self.get_wallet(to_addr)
+
+        try:
+            with self.lock:
+                sender.update_balance(-amount - fee)
+                receiver.update_balance(amount)
+            logger.info(f"Transferred {amount} from {from_addr[:8]} to {to_addr[:8]} with fee {fee}")
+        except ValueError as e:
+            logger.error(f"Balance update error: {e}")
+            return False
+
+        sender.add_transaction(transaction.tx_hash)
+        receiver.add_transaction(transaction.tx_hash)
+        return True
+
+    def add_funds(self, address, amount):
+        wallet = self.get_wallet(address)
+        with self.lock:
+            wallet.update_balance(amount)
+        logger.info(f"Added {amount} funds to wallet {address[:8]}")
+
+    def deduct_funds(self, address, amount):
+        wallet = self.get_wallet(address)
+        with self.lock:
+            wallet.update_balance(-amount)
+        logger.info(f"Deducted {amount} funds from wallet {address[:8]}")
+
+    def transfer_funds(self, from_addr, to_addr, amount, fee):
+        try:
+            sender = self.get_wallet(from_addr)
+            receiver = self.get_wallet(to_addr)
+            with self.lock:
+                sender.update_balance(-amount - fee)
+                receiver.update_balance(amount)
+            logger.info(f"Transferred {amount} from {from_addr[:8]} to {to_addr[:8]} with fee {fee}")
+            return True
+        except ValueError as e:
+            logger.error(f"Transfer funds error: {e}")
+            return False
+
+    def encrypt_private_key(self, private_key: str, password: str) -> str:
+        """
+        Stub method for encrypting a private key.
+        """
+        logger.info("Encrypting private key (stub)")
+        # TODO: Implement actual encryption
+        return private_key
+
+    def decrypt_private_key(self, encrypted_key: str, password: str) -> str:
+        """
+        Stub method for decrypting a private key.
+        """
+        logger.info("Decrypting private key (stub)")
+        # TODO: Implement actual decryption
+        return encrypted_key
+
+    def validate_address_checksum(self, address: str) -> bool:
+        """
+        Validate address checksum (EIP-55 style).
+        """
+        if not isinstance(address, str) or len(address) != 64:
+            return False
+        try:
+            address_lower = address.lower()
+            import hashlib
+            keccak_hash = hashlib.new('sha3_256')
+            keccak_hash.update(address_lower.encode('utf-8'))
+            hash_digest = keccak_hash.hexdigest()
+            for i, c in enumerate(address):
+                if c.isalpha():
+                    if (int(hash_digest[i], 16) >= 8 and c.upper() != c) or (int(hash_digest[i], 16) < 8 and c.lower() != c):
+                        return False
+            return True
+        except Exception as e:
+            logger.error(f"Address checksum validation error: {e}")
+            return False
+
+    def verify_transaction_signature(self, transaction: Transaction) -> bool:
+        """
+        Stub method for verifying transaction signature.
+        """
+        logger.info("Verifying transaction signature (stub)")
+        # TODO: Implement actual signature verification
+        return True
 
     def add_wallet(self, address, initial_balance=0.0):
         if not self._is_valid_address(address):
