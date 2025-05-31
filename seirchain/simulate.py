@@ -16,28 +16,23 @@ from seirchain.data_types.transaction import Transaction, TransactionNode
 from seirchain.miner import Miner
 from seirchain.config import config
 
-
 def generate_random_transactions(num_transactions, current_ledger, wallets_manager):
     """Generates random transactions between existing wallets using the central wallets manager."""
     transactions = []
-
     # Get actual wallet IDs from the manager
     wallet_ids = list(wallets_manager.wallets.keys())
-
     if len(wallet_ids) < 2:
         return []
 
     for _ in range(num_transactions):
         sender_id = random.choice(wallet_ids)
         receiver_id = random.choice([wid for wid in wallet_ids if wid != sender_id])
-
         sender_balance = wallets_manager.get_balance(sender_id)
 
         if sender_balance > 0:
             amount = random.uniform(1, sender_balance * 0.1)
             fee = amount * 0.001
             total_amount = amount + fee
-
             if sender_balance >= total_amount:
                 # Use the manager's transfer method
                 if wallets_manager.transfer_funds(sender_id, receiver_id, amount, fee):
@@ -54,10 +49,9 @@ def generate_random_transactions(num_transactions, current_ledger, wallets_manag
 
 def run_simulation(network_name):
     print(f"Running simulation for the {network_name} network...")
-
     ledger_filename = f"ledger_{network_name}.json"
     wallets_filename = f"wallets_{network_name}.json"
-
+    
     current_ledger = None # Initialize as None
 
     # Try to load existing ledger
@@ -82,7 +76,7 @@ def run_simulation(network_name):
                      main_wallets_manager.add_wallet(tx.sender, 0)
                 if not main_wallets_manager.get_wallet_id_by_name(tx.receiver):
                      main_wallets_manager.add_wallet(tx.receiver, 0)
-
+                
                 # Update balances based on transaction history
                 sender_id = main_wallets_manager.get_wallet_id_by_name(tx.sender) if tx.sender != "0x0" else None
                 receiver_id = main_wallets_manager.get_wallet_id_by_name(tx.receiver)
@@ -108,7 +102,8 @@ def run_simulation(network_name):
 
         # Initialize wallets directly using the manager
         for _ in range(config.NUM_SIMULATED_WALLETS):
-            main_wallets_manager.add_wallet(f"SimulatedWallet_{main_wallets_manager.generate_wallet_id()[:6]}", initial_balance=0)
+            main_wallets_manager.add_wallet(f"SimulatedWallet_{main_wallets_manager.generate_wallet_id()[:6]}",
+initial_balance=0)
         print(f"Created {len(main_wallets_manager.wallets)} initial wallets via manager.")
 
         # Ensure the genesis miner address exists as a wallet in the manager
@@ -125,7 +120,7 @@ def run_simulation(network_name):
                 target_id = random.choice(initial_distribution_targets)
                 main_wallets_manager.add_funds(target_id, config.INITIAL_DISTRIBUTION_AMOUNT / num_targets)
                 print(f"  {config.INITIAL_DISTRIBUTION_AMOUNT / num_targets:.2f} to {main_wallets_manager.wallets[target_id].get('name') or target_id[:8]}...")
-
+        
         # Ensure the genesis miner address has a wallet created for it.
         miner_wallet_id = main_wallets_manager.get_wallet_id_by_name(miner_address)
         if not miner_wallet_id:
@@ -135,7 +130,6 @@ def run_simulation(network_name):
     # Determine the miner's address for this simulation run
     miner_address = config.GENESIS_MINER_ADDRESS_testnet if network_name == "testnet" else "SIMULATED_MINER"
     miner_wallet_id = main_wallets_manager.get_wallet_id_by_name(miner_address) # Get ID if not already found
-
 
     # Initialize Miner instance - current_ledger is now guaranteed to be a TriangularLedger object
     miner_instance = Miner(current_ledger, main_wallets_manager)
@@ -167,15 +161,15 @@ def run_simulation(network_name):
                       f"Depth: {mined_triad.depth} | "
                       f"Hashrate: {stats['hashrate']:.2f} H/s | " # Formatted for better display
                       f"Miner Balance: {main_wallets_manager.get_balance(miner_wallet_id):.2f}")
-
+            
             # Optional: Save ledger periodically
             if current_ledger and current_ledger.genesis_triad and config.SAVE_LEDGER_PERIODICALLY and \
                (datetime.now().timestamp() - current_ledger.genesis_triad.timestamp) % config.SAVE_INTERVAL_SECONDS < config.SIMULATION_LOOP_INTERVAL: # Check relative time
                  current_ledger.save_to_json(ledger_filename)
                  main_wallets_manager.save_wallets(network_name)
 
-
             time.sleep(config.SIMULATION_LOOP_INTERVAL)
+
     except KeyboardInterrupt:
         print("\nSimulation interrupted by user.")
     except Exception as e:
@@ -183,22 +177,22 @@ def run_simulation(network_name):
     finally:
         # Final save of the ledger and wallets state
         print("\nSimulation finished. Saving final ledger state...")
-        if current_ledger and current_ledger.genesis_triad: # Only save if a genesis triad exists
-            current_ledger.save_to_json(ledger_filename)
-            print(f"Final ledger saved to {ledger_filename}")
-            print(f"Total Triads in ledger: {current_ledger.get_total_triads()}")
+        if current_ledger: # <--- SIMPLIFIED CONDITION to ensure save if ledger object exists
+            try: # <--- ADDED TRY-EXCEPT for robustness during save
+                current_ledger.save_to_json(ledger_filename)
+                print(f"Final ledger saved to {ledger_filename}")
+                print(f"Total Triads in ledger: {current_ledger.get_total_triads()}")
+            except Exception as save_e:
+                print(f"Error saving final ledger to {ledger_filename}: {save_e}")
         else:
             print("No ledger to save.")
-
         print("\nSaving final wallets state...")
         main_wallets_manager.save_wallets(network_name)
         print(f"Final wallets saved to {wallets_filename}")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the SeirChain simulation.")
     parser.add_argument("network", choices=["testnet", "mainnet"], help="Specify the network to simulate (testnet or mainnet).")
     args = parser.parse_args()
-
     run_simulation(args.network)
 
