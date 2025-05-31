@@ -8,6 +8,7 @@ from seirchain.data_types.triad import Triad
 from seirchain.data_types.transaction import TransactionNode, Transaction
 from seirchain.config import config
 import logging
+import threading
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class TriangularLedger:
         self.difficulty = config.DIFFICULTY
         self._triad_map = {} # Stores all triads by their hash for quick lookup
         self.transaction_pool = []  # Add transaction pool to hold pending transactions
+        self.transaction_pool_lock = threading.Lock()
 
         if self.genesis_triad:
             # If genesis provided, populate map with it, but the map itself should be built by load_from_json
@@ -70,6 +72,14 @@ class TriangularLedger:
                 found_parent = True
 
         return found_parent
+
+    def add_transaction(self, transaction):
+        """
+        Thread-safe addition of a transaction to the transaction pool.
+        """
+        with self.transaction_pool_lock:
+            self.transaction_pool.append(transaction)
+            logger.info(f"Transaction added to pool: {transaction.tx_hash}")
 
     def get_current_tip_triad_hashes(self):
         """

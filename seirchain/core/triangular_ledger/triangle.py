@@ -1,4 +1,12 @@
 class Triangle:
+    """
+    Represents a Triangle in the triangular ledger fractal structure.
+    Attributes:
+        triad (Triad): The associated Triad object.
+        coordinates (tuple): Coordinates in fractal space.
+        transactions (list): List of transactions in this triangle.
+        children (list): List of child triangles.
+    """
     def __init__(self, triad, coordinates=(0, 0)):
         self.triad = triad
         self.coordinates = coordinates
@@ -7,6 +15,8 @@ class Triangle:
         
     def add_transaction(self, transaction):
         """Add a transaction to this triangle"""
+        if transaction is None:
+            raise ValueError("Cannot add None as a transaction")
         self.transactions.append(transaction)
 
     def get_transactions(self):
@@ -15,6 +25,8 @@ class Triangle:
         
     def add_child(self, triangle):
         """Add a child triangle in the fractal structure"""
+        if triangle is None:
+            raise ValueError("Cannot add None as a child triangle")
         self.children.append(triangle)
         
     def fractal_position(self, depth):

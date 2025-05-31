@@ -1,4 +1,13 @@
 class Triad:
+    """
+    Represents a Triad in the triangular ledger.
+    Attributes:
+        triad_id (str): Unique identifier for the triad.
+        depth (int): Depth level in the ledger.
+        hash_value (str): Hash of the triad.
+        parent_hashes (list): List of parent triad hashes.
+        child_hashes (list): List of child triad hashes.
+    """
     def __init__(self, triad_id, depth, hash_value, parent_hashes, **kwargs):
         self.triad_id = triad_id
         self.depth = depth
@@ -44,6 +53,13 @@ class Triad:
 
 
 class TriadNode:
+    """
+    Represents a node in the triangular ledger containing transactions.
+    Attributes:
+        triad_id (str): Unique identifier for the triad node.
+        depth (int): Depth level in the ledger.
+        transactions (list): List of transactions associated with this node.
+    """
     def __init__(self, triad_id, depth):
         self.triad_id = triad_id
         self.depth = depth
@@ -51,6 +67,12 @@ class TriadNode:
         
     def add_transaction(self, tx_data):
         from .transaction import Transaction
+        if not isinstance(tx_data, dict):
+            raise ValueError("Transaction data must be a dictionary")
+        required_keys = ['transaction_data', 'tx_hash', 'timestamp']
+        for key in required_keys:
+            if key not in tx_data:
+                raise ValueError(f"Missing key '{key}' in transaction data")
         tx = Transaction(
             transaction_data=tx_data['transaction_data'],
             tx_hash=tx_data['tx_hash'],

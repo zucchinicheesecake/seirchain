@@ -10,6 +10,9 @@ from .protocol import MessageHandler
 logger = logging.getLogger(__name__)
 
 class Node:
+    """
+    Represents a network node that manages P2P connections, message handling, and ledger/wallet integration.
+    """
     def __init__(self, host='0.0.0.0', port=None, ledger=None, wallet_manager=None):
         self.host = host
         self.port = port if port is not None else config.P2P_PORT
@@ -31,8 +34,14 @@ class Node:
             # Add production nodes here
         ]
 
+        self.accept_thread = None
+        self.bootstrap_threads = []
+        self.lock = threading.Lock()
 
     def start(self):
+        """
+        Start the node server, accept connections, start P2P manager, and connect to bootstrap nodes.
+        """
         try:
             self.server_socket.bind((self.host, self.port))
             self.server_socket.listen(5)
@@ -40,8 +49,8 @@ class Node:
             logger.info(f"Node listening on {self.host}:{self.port}")
 
             # Start connection handler
-            accept_thread = threading.Thread(target=self.accept_connections, daemon=True)
-            accept_thread.start()
+            self.accept_thread = threading.Thread(target=self.accept_connections, daemon=True)
+            self.accept_thread.start()
 
             # Start P2P manager
             self.p2p_manager.start()
@@ -54,25 +63,37 @@ class Node:
             self.stop()
 
     def accept_connections(self):
+        """
+        Accept incoming connections and add peers to P2P manager.
+        """
         while self.running:
             try:
                 client_socket, addr = self.server_socket.accept()
                 self.p2p_manager.add_peer(client_socket, addr)
             except OSError:
                 break
+            except Exception as e:
+                logger.error(f"Error accepting connection: {e}")
 
     def connect_to_bootstrap_nodes(self):
-        """Connect to predefined bootstrap nodes"""
+        """
+        Connect to predefined bootstrap nodes in separate threads.
+        """
         for host, port in self.bootstrap_nodes:
             if (host, port) != (self.host, self.port):  # Don't connect to self
-                threading.Thread(
+                t = threading.Thread(
                     target=self.connect_to_peer,
                     args=(host, port),
                     daemon=True
-                ).start()
+                )
+                t.start()
+                with self.lock:
+                    self.bootstrap_threads.append(t)
 
     def connect_to_peer(self, host, port):
-        """Connect to another peer"""
+        """
+        Connect to another peer node.
+        """
         try:
             peer_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             peer_socket.connect((host, port))
@@ -81,9 +102,14 @@ class Node:
         except (ConnectionRefusedError, socket.gaierror) as e:
             logger.warning(f"Connection to peer {host}:{port} failed: {e}")
             return False
+        except Exception as e:
+            logger.error(f"Unexpected error connecting to peer {host}:{port}: {e}")
+            return False
 
     def broadcast(self, data):
-        """Broadcast data to all peers"""
+        """
+        Broadcast data to all connected peers.
+        """
         try:
             if isinstance(data, object) and hasattr(data, '__dict__'):
                 message = json.dumps(data.__dict__)
@@ -94,11 +120,26 @@ class Node:
             logger.error(f"Broadcast error: {e}")
 
     def stop(self):
+        """
+        Stop the node server and P2P manager gracefully.
+        """
         self.running = False
         try:
             self.server_socket.close()
         except Exception as e:
             logger.error(f"Error closing server socket: {e}")
+
+        # Wait for accept thread to finish
+        if self.accept_thread and self.accept_thread.is_alive():
+            self.accept_thread.join(timeout=2)
+
+        # Wait for bootstrap threads to finish
+        with self.lock:
+            for t in self.bootstrap_threads:
+                if t.is_alive():
+                    t.join(timeout=2)
+            self.bootstrap_threads.clear()
+
         self.p2p_manager.stop()
         logger.info("Node stopped")
 

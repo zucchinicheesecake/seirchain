@@ -15,11 +15,14 @@ class Config:
         self.GENESIS_MINER_ADDRESS_testnet = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
         self.DIFFICULTY = 4  # Number of leading zeros required for a valid hash
         self.MINING_REWARD = 50.0  # Reward for mining a triad
+        self.TOKEN_NAME = "Władysłaium"
+        self.TOKEN_SYMBOL = "WŁA"
         self.MAX_NONCE_ATTEMPTS = 1_000_000  # Max attempts for Proof-of-Work (adjust for desired speed)
         self.MAX_TRANSACTIONS_PER_TRIAD = 100 # Max transactions a triad can hold
         self.MAX_DEPTH = 1000 # Maximum depth of the ledger.
         self.TRANSACTION_FEE = 0.001
         self.MAX_CHILD_CAPACITY = 3 # Max children a triad can have
+
 
         # --- P2P Network Settings (placeholder for future implementation) ---
         self.P2P_PORT = 8000 # Default port for the P2P node

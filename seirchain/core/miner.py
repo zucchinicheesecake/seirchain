@@ -10,6 +10,9 @@ from seirchain.config import config
 logger = logging.getLogger(__name__)
 
 class Miner:
+    """
+    Manages mining operations with thread safety, fractal PoW, and transaction pool handling.
+    """
     def __init__(self, ledger, node, wallet_manager, miner_address, num_threads=1):
         self.ledger = ledger
         self.node = node
@@ -22,7 +25,9 @@ class Miner:
         self.transaction_pool_lock = threading.Lock()
 
     def start(self):
-        """Start mining with multiple threads"""
+        """
+        Start mining with multiple threads.
+        """
         with self.mining_lock:
             if self.mining:
                 logger.warning("Mining already started")
@@ -39,7 +44,9 @@ class Miner:
         logger.info(f"Starting fractal mining with {self.num_threads} threads")
 
     def stop(self):
-        """Stop all mining operations"""
+        """
+        Stop all mining operations gracefully.
+        """
         with self.mining_lock:
             self.mining = False
         for thread in self.threads:
@@ -48,7 +55,9 @@ class Miner:
         self.threads = []
 
     def mine(self):
-        """Mine new triads using fractal PoW"""
+        """
+        Mine new triads using fractal proof-of-work.
+        """
         thread_name = threading.current_thread().name
         logger.info(f"{thread_name}: Starting fractal mining")
 
@@ -59,7 +68,7 @@ class Miner:
                     break
             try:
                 # Get current transaction pool (thread-safe)
-                with self.transaction_pool_lock:
+                with self.ledger.transaction_pool_lock:
                     transactions = self.ledger.transaction_pool[:10]
 
                 # Create new triad
@@ -113,7 +122,7 @@ class Miner:
                 triad_node.triad.triad_id = triad_node.triad.hash_value
 
                 # Add to ledger
-                with self.transaction_pool_lock:
+                with self.ledger.transaction_pool_lock:
                     self.ledger.add_triad(triad_node.triad)
                     self.ledger.transaction_pool = self.ledger.transaction_pool[len(transactions):]
 
@@ -126,10 +135,11 @@ class Miner:
                 if self.node.running:
                     self.node.broadcast(triad_node.triad)
 
-                # Log success
+                # Log success with token name and symbol
                 mining_time = time.time() - start_time
                 logger.info(f"{thread_name}: Mined triad {triad_node.triad.triad_id[:8]} "
-                      f"at depth {triad_node.triad.depth} in {mining_time:.2f}s")
+                      f"at depth {triad_node.triad.depth} in {mining_time:.2f}s, "
+                      f"reward: {config.MINING_REWARD} {config.TOKEN_SYMBOL} ({config.TOKEN_NAME})")
 
                 # Brief pause between mining cycles
                 time.sleep(0.5)
@@ -139,7 +149,9 @@ class Miner:
                 time.sleep(1)
 
     def get_parent_triads(self):
-        """Select parent triads for the new triad"""
+        """
+        Select parent triads for the new triad.
+        """
         if not hasattr(self.ledger, '_triad_map'):
             return []
         tip_hashes = self.ledger.get_current_tip_triad_hashes()
@@ -150,7 +162,9 @@ class Miner:
         return parents
 
     def calculate_fractal_hash(self, triad_node, nonce):
-        """Calculate fractal hash for triad"""
+        """
+        Calculate fractal hash for triad.
+        """
         tx_hashes = ""
         for tx in triad_node.transactions:
             if hasattr(tx, 'tx_hash'):
@@ -167,7 +181,9 @@ class Miner:
         return hashlib.sha256(first_hash.encode()).hexdigest()
 
     def create_reward_transaction(self):
-        """Create mining reward transaction"""
+        """
+        Create mining reward transaction.
+        """
         # Create a Transaction object with attributes matching wallet_manager expectations
         tx_data = {
             'from_addr': "0"*64,
@@ -186,6 +202,8 @@ class Miner:
         return reward_tx
 
     def add_transaction_to_pool(self, transaction):
-        """Add a transaction to the ledger's transaction pool safely"""
+        """
+        Add a transaction to the ledger's transaction pool safely.
+        """
         with self.transaction_pool_lock:
             self.ledger.transaction_pool.append(transaction)
