@@ -1,16 +1,28 @@
-# seirchain/__init__.py
+from .data_types import Transaction, Triad, Triangle
+from .miner import Miner
+from .network import Node
+from .ledger import TriangularLedger
 
-# This file makes 'seirchain' a Python package.
-# It can also be used to expose commonly used components directly under the 'seirchain' namespace.
+# Global wallets manager
+class GlobalWallets:
+    def __init__(self):
+        self.wallets = {}
+        
+    def add_wallet(self, address, wallet):
+        self.wallets[address] = wallet
+        
+global_wallets = GlobalWallets()
 
-# Example: Expose core components for easier import
-from .triangular_ledger.ledger import TriangularLedger, Triangle, TransactionNode
-from .wallet_manager.keys import Wallet
-from .enhanced_miner.cpu_miner import CpuMiner
-from .visualizer.ascii import render_ascii
-from .data_types.transaction import Transaction # <--- CHANGED HERE: from .types to .data_types
-
-__version__ = "0.2.1" # Example version, increment as needed
-
-# You can add more package-level initialization here if necessary
-
+# ASCII visualization functions
+def render_ascii(ledger):
+    """Simple ASCII visualization of the triad structure"""
+    if not ledger.triads:
+        return "No triads yet"
+    
+    # Simple representation showing the depth structure
+    output = []
+    for triad in ledger.triads:
+        depth_indent = "  " * triad.depth
+        output.append(f"{depth_indent}△ Triad {triad.triad_id[:8]} (depth={triad.depth})")
+    
+    return "\n".join(output)

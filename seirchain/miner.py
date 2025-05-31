@@ -1,159 +1,145 @@
+import threading
 import time
-import random
 import hashlib
-from seirchain.data_types.triad import Triad
-from seirchain.data_types.transaction import Transaction, TransactionNode
-from seirchain.config import config
-from seirchain.data_types.wallets import wallets as main_wallets_manager # Import the manager
+import os
+from seirchain.data_types import Triad, Transaction, Triangle
 
 class Miner:
-    def __init__(self, ledger, wallets_manager): # walets_manager is now the main_wallets_manager instance
+    def __init__(self, ledger, node, wallet_manager, miner_address, num_threads=1):
         self.ledger = ledger
-        self.wallets_manager = wallets_manager # Store the wallets manager instance
-        self.transaction_pool = []
-        self.mining_stats = {"hash_attempts": 0, "triads_mined_session": 0}
+        self.node = node
+        self.wallet_manager = wallet_manager
+        self.miner_address = miner_address
+        self.mining = False
+        self.threads = []
+        self.mining_lock = threading.Lock()
+        self.num_threads = num_threads
 
-    def add_transaction_to_pool(self, tx_node):
-        """Adds a validated transaction (as TransactionNode) to the miner's pool."""
-        # In a real system, more validation would occur here (e.g., signature check)
-        self.transaction_pool.append(tx_node)
+    def start(self):
+        """Start mining with multiple threads"""
+        self.mining = True
+        for i in range(self.num_threads):
+            thread = threading.Thread(
+                target=self.mine,
+                name=f"Miner-Thread-{i+1}",
+                daemon=True
+            )
+            thread.start()
+            self.threads.append(thread)
+        print(f"Starting fractal mining with {self.num_threads} threads")
 
-    def _get_transactions_for_triad(self):
-        """
-        Selects transactions from the pool for inclusion in a new triad.
-        Prioritizes transactions with higher fees (if applicable), or simply selects
-        a limited number for simulation.
-        """
-        num_to_select = min(len(self.transaction_pool), config.MAX_TRANSACTIONS_PER_TRIAD)
+    def stop(self):
+        """Stop all mining operations"""
+        self.mining = False
+        for thread in self.threads:
+            if thread.is_alive():
+                thread.join(timeout=1.0)
+        self.threads = []
 
-        # For simplicity, just take the first N transactions.
-        # In a real system, fees would be considered.
-        selected_tx_nodes = self.transaction_pool[:num_to_select]
-        self.transaction_pool = self.transaction_pool[num_to_select:] # Remove from pool
+    def mine(self):
+        """Mine new triads using fractal PoW"""
+        thread_name = threading.current_thread().name
+        print(f"{thread_name}: Starting fractal mining")
 
-        return selected_tx_nodes
+        while self.mining:
+            try:
+                # Get current transaction pool (thread-safe)
+                with self.mining_lock:
+                    transactions = self.ledger.transaction_pool[:10]
 
-    def mine_next_triad(self, miner_address):
-        """
-        Attempts to mine a new triad.
-        1. Selects candidate parent triads from the current ledger tips.
-        2. Gathers transactions from the pool.
-        3. Creates a coinbase transaction for the mining reward.
-        4. Performs Proof-of-Work to find a valid nonce.
-        5. Adds the valid triad to the ledger.
-        """
-        # 1. Get candidate parent triads from the ledger
-        tip_hashes = self.ledger.get_current_tip_triad_hashes()
+                # Create new triad
+                parents = self.get_parent_triads()
+                triad = Triad(
+                    triad_id="",
+                    depth=parents[0].depth + 1 if parents else 0,
+                    hash_value="",
+                    parent_hashes=[p.triad_id for p in parents]
+                )
 
-        candidate_parents = []
-        if not tip_hashes:
-            # This implies no genesis triad yet. Miner should create a genesis triad.
-            print("No tips found. Attempting to mine genesis triad...")
-            # Genesis triad has no parents
-            parent_hashes = []
-        else:
-            # For simplicity, choose a random tip as the parent.
-            # In a real system, more complex parent selection logic (e.g., longest chain)
-            # and multiple parents would be considered for a triangular structure.
-            for h in tip_hashes:
-                parent_triad = self.ledger._find_triad_by_hash(h)
-                if parent_triad:
-                    candidate_parents.append(parent_triad)
+                # Create triad node with default coordinates
+                triad_node = Triangle(triad, coordinates=(0, 0))
+                for tx in transactions:
+                    triad_node.add_transaction(tx)
 
-            if not candidate_parents: # If for some reason tips didn't translate to objects
-                print("Could not retrieve parent Triad objects from tips.")
-                return None
+                # Fractal PoW mining
+                nonce = 0
+                start_time = time.time()
+                solution_found = False
 
-            # Select a parent triad (simplified for now: random choice from valid parents)
-            parent_triad = random.choice(candidate_parents)
-            parent_hashes = [parent_triad.hash] # Use the actual hash attribute
+                while self.mining and not solution_found:
+                    triad_node.triad.hash_value = self.calculate_fractal_hash(triad_node, nonce)
 
-            # Update depth for the new triad based on parent
-            new_triad_depth = parent_triad.depth + 1
+                    # Check PoW solution
+                    if triad_node.triad.hash_value.startswith("00000"):
+                        solution_found = True
+                        break
 
-        # 2. Gathers transactions
-        transactions_for_triad = self._get_transactions_for_triad()
+                    nonce += 1
 
-        # 3. Create a coinbase transaction (mining reward + transaction fees)
-        total_fees = sum(tx_node.transaction.fee for tx_node in transactions_for_triad)
-        coinbase_amount = config.MINING_REWARD + total_fees
+                    # Yield CPU every 1000 iterations
+                    if nonce % 1000 == 0:
+                        time.sleep(0.001)
 
-        # The coinbase transaction "sender" is typically 0x0 or an empty address
-        coinbase_tx = Transaction(
-            sender="0x0", # Special address for coinbase
-            receiver=miner_address,
-            amount=coinbase_amount,
-            fee=0.0, # Coinbase has no fee
-            timestamp=time.time(),
-            signature="coinbase_tx"
-        )
-        # Wrap coinbase transaction in a TransactionNode for consistency
-        coinbase_tx_node = TransactionNode(coinbase_tx, parent_hash=None) # Coinbase has no parent in the transaction graph
-        transactions_for_triad.insert(0, coinbase_tx_node) # Add coinbase as the first transaction
+                # If mining was stopped
+                if not self.mining:
+                    print(f"{thread_name}: Mining stopped")
+                    return
 
-        # 4. Perform Proof-of-Work
-        nonce = 0
-        current_hash = ""
-        start_time = time.time()
+                # Set triad ID
+                triad_node.triad.triad_id = triad_node.triad.hash_value
 
-        # For genesis triad, depth is 0
-        if not self.ledger.genesis_triad:
-            new_triad_depth = 0
-        elif candidate_parents: # If we have parents, depth is max parent depth + 1
-            new_triad_depth = max(p.depth for p in candidate_parents) + 1
-        else: # Fallback if no parents or genesis
-            new_triad_depth = 0
+                # Add to ledger
+                with self.mining_lock:
+                    self.ledger.add_triad(triad_node.triad)
+                    self.ledger.transaction_pool = self.ledger.transaction_pool[len(transactions):]
 
-        # Create a prospective Triad object to calculate its hash
-        # Triad ID can be a random UUID or derived from parents
-        triad_id = hashlib.sha256(str(time.time()).encode() + str(random.random()).encode()).hexdigest()
+                # Add mining reward
+                if self.wallet_manager:
+                    reward_tx = self.create_reward_transaction()
+                    self.wallet_manager.update_balances(reward_tx)
 
-        prospective_triad = Triad(
-            triad_id=triad_id,
-            depth=new_triad_depth,
-            parent_hashes=parent_hashes,
-            transactions=transactions_for_triad,
-            nonce=nonce, # Initial nonce
-            difficulty=config.DIFFICULTY,
-            miner_address=miner_address,
+                # Broadcast new triad
+                if self.node.running:
+                    self.node.broadcast(triad_node.triad)
+
+                # Log success
+                mining_time = time.time() - start_time
+                print(f"{thread_name}: Mined triad {triad_node.triad.triad_id[:8]} "
+                      f"at depth {triad_node.triad.depth} in {mining_time:.2f}s")
+
+                # Brief pause between mining cycles
+                time.sleep(0.5)
+
+            except Exception as e:
+                print(f"{thread_name}: Mining error - {str(e)}")
+                import traceback
+                traceback.print_exc()
+                time.sleep(1)
+
+    def get_parent_triads(self):
+        """Select parent triads for the new triad"""
+        if not self.ledger.triads:
+            return []
+        return [self.ledger.triads[-1]]
+
+    def calculate_fractal_hash(self, triad_node, nonce):
+        """Calculate fractal hash for triad"""
+        tx_hashes = "".join(tx.tx_hash for tx in triad_node.get_transactions())
+        data = f"{triad_node.triad.depth}-{nonce}-{tx_hashes}"
+
+        # Double SHA-256
+        first_hash = hashlib.sha256(data.encode()).hexdigest()
+        return hashlib.sha256(first_hash.encode()).hexdigest()
+
+    def create_reward_transaction(self):
+        """Create mining reward transaction"""
+        return Transaction(
+            transaction_data={
+                'from_addr': "0"*40,
+                'to_addr': self.miner_address,
+                'amount': 50.0,
+                'fee': 0.0
+            },
+            tx_hash=hashlib.sha256(os.urandom(32)).hexdigest(),
             timestamp=time.time()
         )
-
-        found_nonce = False
-        for nonce_attempt in range(config.MAX_NONCE_ATTEMPTS):
-            self.mining_stats["hash_attempts"] += 1
-            prospective_triad.nonce = nonce_attempt
-            current_hash = prospective_triad.calculate_hash()
-
-            if current_hash.startswith('0' * config.DIFFICULTY):
-                found_nonce = True
-                break
-
-        end_time = time.time()
-        hash_rate = self.mining_stats["hash_attempts"] / (end_time - start_time) if (end_time - start_time) > 0 else 0
-        self.mining_stats["hashrate"] = hash_rate
-
-        if found_nonce:
-            prospective_triad.hash = current_hash # Set the final hash
-            # 5. Add the newly mined triad to the ledger
-            if self.ledger.add_triad(prospective_triad):
-                self.mining_stats["triads_mined_session"] += 1
-
-                # Apply coinbase reward to miner's wallet
-                miner_wallet_id = self.wallets_manager.get_wallet_id_by_name(miner_address)
-                if miner_wallet_id:
-                    self.wallets_manager.add_funds(miner_wallet_id, coinbase_amount)
-                else:
-                    print(f"Warning: Miner wallet not found for address {miner_address}. Reward not applied.")
-
-                return prospective_triad
-            else:
-                print("Failed to add mined triad to ledger (parent not found or other issue).")
-                return None
-        else:
-            # print(f"Mining failed after {config.MAX_NONCE_ATTEMPTS} attempts. No valid nonce found.")
-            return None
-
-    def get_mining_stats(self):
-        return self.mining_stats
-
