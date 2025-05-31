@@ -25,3 +25,15 @@ Follow-up steps:
 - Run comprehensive tests and simulations to verify fixes and refactoring.
 - Monitor logs for errors or warnings during operation.
 - Provide a summary report of changes and improvements made.
+
+Additional Deployment and Archiving Plan Checklist:
+
+[x] 1. Run the genesis generation script (run_genesis.sh) for testnet.
+[x] 2. Run the genesis generation script (run_genesis.sh) for mainnet.
+[x] 3. Move ledger_testnet.json to archive/ directory.
+[x] 4. Move ledger_mainnet.json to archive/ directory.
+[x] 5. Create .gitignore file in root directory.
+[x] 6. Add ledger_testnet.json, ledger_mainnet.json, and archive/ directory to .gitignore.
+[x] 7. Verify that genesis ledgers are archived and ignored by git.
+
+This checklist will help track progress and assist successors in understanding the deployment and archiving process.
