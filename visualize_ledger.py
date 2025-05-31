@@ -1,11 +1,11 @@
 import sys
 import json
-import os # Import os for path checking
-import argparse # Import argparse for command-line arguments
+import os
+import argparse
 
-from seirchain.triangular_ledger.ledger import TriangularLedger
-from seirchain.visualizer.ascii import render_ascii
-from seirchain.config import load_config # Import load_config
+from seirchain.config import config as global_config
+from seirchain.triangular_ledger.triangular_ledger import TriangularLedger
+from seirchain.visualizer.ascii import render_ascii # Assuming this path is correct
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Visualize SeirChain Fractal Ledger.")
@@ -13,34 +13,50 @@ if __name__ == "__main__":
                                 help='Specify the network whose ledger to visualize (testnet or mainnet).')
     args = parser.parse_args()
 
-    # Load the specific network config to get the ledger file name
+    # --- Configuration Loading ---
+    config_filename = f"config_{args.network}.json"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    network_config_path = os.path.join(current_dir, config_filename)
+
     try:
-        config = load_config(args.network)
-    except FileNotFoundError as e:
-        print(f"Error: {e}")
-        print(f"Please ensure {args.network}_config.ini exists in seirchain/conf/")
+        global_config.load_from_file(network_config_path)
+        print(f"Loaded configuration from {network_config_path}")
+    except FileNotFoundError:
+        print(f"Error: Configuration file '{network_config_path}' not found for {args.network} network.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error loading configuration from {network_config_path}: {e}")
         sys.exit(1)
 
-    ledger_file = config['network']['ledger_file']
-    max_depth = int(config['ledger']['max_depth'])
-    ledger_version = config['ledger']['ledger_version']
-
-    # Check if ledger file exists before attempting to load
+    # --- Ledger Loading ---
+    ledger_file = f"ledger_{args.network}.json"
+    
     if not os.path.exists(ledger_file):
         print(f"Error: Ledger file '{ledger_file}' not found for {args.network} network.")
-        print(f"Please run 'python seirchain/tools/generate_genesis.py {args.network}' or './run_simulation.sh {args.network}' first.")
+        print(f"Please run './run_simulation.sh {args.network}' or './run_genesis.sh {args.network}' first.")
         sys.exit(1)
 
-    # Initialize a TriangularLedger object with config parameters
-    ledger = TriangularLedger(max_depth=max_depth, ledger_version=ledger_version)
-
-    # Attempt to load the ledger from the specified file
-    if not ledger.load_from_file(ledger_file):
-        print(f"Error: Could not load ledger from {ledger_file}.")
+    ledger = None 
+    try:
+        ledger = TriangularLedger.load_from_json(ledger_file)
+        if not ledger:
+            print(f"Error: Could not load ledger from {ledger_file} (loaded_ledger is None).")
+            sys.exit(1)
+        print(f"Successfully loaded ledger from {ledger_file}. Total triads: {ledger.get_total_triads()}")
+    except Exception as e:
+        print(f"Error loading ledger from {ledger_file}: {e}")
         sys.exit(1)
 
-    ascii_art_lines = render_ascii(ledger.root, ledger)
+    # --- ASCII Visualization ---
+    # FIX: Changed 'ledger.root' to 'ledger.genesis_triad'
+    if ledger and ledger.genesis_triad: 
+        print("\nGenerating ASCII visualization...")
+        # FIX: Changed 'ledger.root' to 'ledger.genesis_triad' when passing to render_ascii
+        ascii_art_lines = render_ascii(ledger.genesis_triad, ledger)
+        for line in ascii_art_lines:
+            print(line)
+        print("\nASCII visualization complete.")
+    else:
+        print("No genesis triad found in the ledger. Cannot visualize.")
 
-    for line in ascii_art_lines:
-        print(line)
 

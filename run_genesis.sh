@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the path to the Python executable in the virtual environment
-PYTHON_ENV="/home/amy/seirchain/venv/bin/python"
+PYTHON_ENV="/home/amy/new/seirchain/venv/bin/python"
 
 # Define the module path for the genesis script
 # IMPORTANT: Use the module path 'seirchain.tools.generate_genesis' with -m

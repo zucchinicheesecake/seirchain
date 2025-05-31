@@ -1,14 +1,46 @@
 {
-  "bed50640b82b2bc5274000db58e04ad3": {
-    "name": "GENESIS_MINE_WALLET",
-    "balance": 0.0
+  "6ba9c29f9f86852b52ee47a55dd9e5cc": {
+    "name": "SimulatedWallet_523261",
+    "balance": 27.04194632009266
   },
-  "6c976961e3232e308f7cf8ca19e73df4": {
-    "name": "SimWallet_A",
-    "balance": 1000.0
+  "b04e81849ee8f8f1335c0417e57db2a3": {
+    "name": "SimulatedWallet_d749cb",
+    "balance": 73.21706950408364
   },
-  "a6840a4bcfa5d295ba4bd8df9e8d8422": {
-    "name": "SimWallet_B",
-    "balance": 500.0
+  "de2eb2f3073fc4393e072774c4f8dfc6": {
+    "name": "SimulatedWallet_2fe7a9",
+    "balance": 298.06039113072654
+  },
+  "2f27abb8ea2f11b72a885ac5f089d722": {
+    "name": "SimulatedWallet_d9600e",
+    "balance": 82.05271709040608
+  },
+  "b93dc6fb041054bd39c6c33d580a0749": {
+    "name": "SimulatedWallet_26b0d5",
+    "balance": 22.836585358273044
+  },
+  "c1efedffefd397c1d643894c992b969b": {
+    "name": "SimulatedWallet_d3f6db",
+    "balance": 170.26302134919018
+  },
+  "6de8a86246856a8887a8ba283b69455a": {
+    "name": "SimulatedWallet_86466e",
+    "balance": 207.34886935807285
+  },
+  "ba909e0e7e75264c227af8b155fecb11": {
+    "name": "SimulatedWallet_c32450",
+    "balance": 128.75601359562506
+  },
+  "539d87fe4af808c5e129fd21aff99868": {
+    "name": "SimulatedWallet_8e3e94",
+    "balance": 44.8178014682452
+  },
+  "bd693055a8a81e8ecbc0b8c75556caf3": {
+    "name": "SimulatedWallet_713925",
+    "balance": 119.30397871460816
+  },
+  "38928f2849da2baa4f31ff6072bd87da": {
+    "name": "SIMULATED_MINER",
+    "balance": 1326.3016061106769
   }
 }
